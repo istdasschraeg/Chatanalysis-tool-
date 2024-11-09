@@ -45,7 +45,10 @@ class Chatfile:
         self.total_edits=0
         self.total_deleted=0
         self.total_links=0
+        self.time_str =""
+        self.date_str = ""
 
+        self.load_file()
         self.clean_up_file()
         self.extract_participant_names()
         self.create_person_objects()
@@ -55,9 +58,8 @@ class Chatfile:
         self.output_file_analyses()
 
     def load_file(self):
-            with open(self.file_name, "r", encoding="utf8") as file:
+            with open(self.name, "r", encoding="utf8") as file:
                 self.chat_lines = file.readlines()
-
 
     def clean_up_file(self):
             # Process lines to clean up and merge
@@ -96,7 +98,7 @@ class Chatfile:
                     print("Which of these is the name of the groupchat?")
                     excluded_names.append(input())
                     print("Which of these is your name?")
-                    user_name=input()
+                    #user_name=input()
 
                     number_of_replicates=0
                     print("Is any of these names a replication of Another? y/n")
@@ -122,7 +124,7 @@ class Chatfile:
                 self.participant_objects.append(Person(participant_name, gender))
 
     def measure_time(self):
-            for participant in participant_names:
+            for participant in self.participant_names:
                 person_index = 0
                 for line in self.chat_lines:
                     # Check for lines starting with "[" indicating a message
@@ -131,8 +133,8 @@ class Chatfile:
                         
                         # Identify and extract message time details if participant name matches
                         if line[21:29] == participant:
-                            time_str = line[12:19]
-                            date_str = line[2:10]
+                            self.time_str = line[12:19]
+                            self.date_str = line[2:10]
                             
                             # Extract and store individual time components
                             hour = int(line[11:13])
@@ -158,7 +160,7 @@ class Chatfile:
     def ANALyse_messages(self):
             # Collect message content for each participant
             message_count_total = 0
-            for person_index, participant in enumerate(participant_names):
+            for person_index, participant in enumerate(self.participant_names):
                 for line in self.chat_lines:
                     
                     # Identify and store message content if participant's name is found
@@ -203,9 +205,11 @@ class Chatfile:
 
     def analyse_entiere_file(self):
             # Creates a String with all the messages 
-            new_total_text_content= ""
+            self.new_total_text_content= ""
             for person in self.participant_objects:
-                self.new_total_text_content+= " ".join(person.messages)       
+                self.new_total_text_content+= " ".join(person.messages)  
+
+
                 self.total_files = sum(person.file_count for person in self.participant_objects)
                 self.total_stickers = sum(person.sticker_count for person in self.participant_objects)
                 self.total_audios = sum(person.audio_count for person in self.participant_objects)
@@ -217,30 +221,33 @@ class Chatfile:
                 self.total_voice_calls = sum(person.voice_call_count for person in self.participant_objects)
                 self.total_links = sum(person.link_count for person in self.participant_objects)
                 self.total_words = len(self.new_total_text_content.split()) 
-                self.person.calculate_message_percentage(self.message_count_total)
-                self.person.calculate_word_percentage(self.total_words)
-                self.person.calculate_file_percentage(self.total_files)
-                self.person.calculate_sticker_percentage(self.total_stickers)
-                self.person.calculate_audio_percentage(self.total_audios)
-                self.person.calculate_video_percentage(self.total_videos)
-                self.person.calculate_image_percentage(self.total_images)
-                self.person.calculate_edit_percentage(self.total_edits)
-                self.person.calculate_deleted_percentage(self.total_deleted)
-                self.person.calculate_video_call_percentage(self.total_video_calls)
-                self.person.calculate_voice_call_percentage(self.total_voice_calls)
-                self.person.calculate_links_percentage(self.total_links)
+                self.total_textmessages += person.message_count
+
+            for person in self.participant_objects:
+                person.calculate_message_percentage(self.total_textmessages)
+                person.calculate_word_percentage(self.total_words)
+                person.calculate_file_percentage(self.total_files)
+                person.calculate_sticker_percentage(self.total_stickers)
+                person.calculate_audio_percentage(self.total_audios)
+                person.calculate_video_percentage(self.total_videos)
+                person.calculate_image_percentage(self.total_images)
+                person.calculate_edit_percentage(self.total_edits)
+                person.calculate_deleted_percentage(self.total_deleted)
+                person.calculate_video_call_percentage(self.total_video_calls)
+                person.calculate_voice_call_percentage(self.total_voice_calls)
+                person.calculate_links_percentage(self.total_links)
 
     def output_file_analyses(self):
             # Final calculations for message and word percentages
-            for person_index, participant in enumerate(self.participant_names):
-                person = self.participant_objects[person_index]
+            for person in self.participant_objects:
+                
                 
                 # Combine all messages as a single text block and calculate word count
                 person.text_content = " ".join(person.messages)
                 person.word_count = len(person.text_content.split())
                 
                 # Calculate percentages of total messages and words
-                person.message_percentage = person.message_count / self.message_count_total
+                person.message_percentage = person.message_count / self.total_textmessages
                 person.word_percentage = person.word_count / len(self.new_total_text_content.split()) #
                 
                 # Print statistics for each participant
@@ -369,4 +376,4 @@ class Person:
 
 
 
-Chatfile(file_name)
+f1= Chatfile(file_name)
