@@ -33,6 +33,7 @@ class Chatfile:
         self.participant_names = []
         self.new_total_text_content=""
         self.total_words=0
+        self.total_message_count=0
         self.total_textmessages=0
         self.total_messages=0
         self.total_stickers=0
@@ -221,10 +222,12 @@ class Chatfile:
                 self.total_voice_calls = sum(person.voice_call_count for person in self.participant_objects)
                 self.total_links = sum(person.link_count for person in self.participant_objects)
                 self.total_words = len(self.new_total_text_content.split()) 
-                self.total_textmessages += person.message_count
+                self.total_message_count += person.message_count
+                self.total_textmessages += person.text_message_count
 
             for person in self.participant_objects:
-                person.calculate_message_percentage(self.total_textmessages)
+                person.calculate_message_percentage(self.total_message_count)
+                person.calculate_text_message_percentage(self.total_textmessages)
                 person.calculate_word_percentage(self.total_words)
                 person.calculate_file_percentage(self.total_files)
                 person.calculate_sticker_percentage(self.total_stickers)
@@ -247,11 +250,12 @@ class Chatfile:
                 person.word_count = len(person.text_content.split())
                 
                 # Calculate percentages of total messages and words
-                person.message_percentage = person.message_count / self.total_textmessages
+                person.message_percentage = person.message_count / self.total_message_count
                 person.word_percentage = person.word_count / len(self.new_total_text_content.split()) #
                 
                 # Print statistics for each participant
                 print(f"{person.name} has sent {person.message_count} messages, accounting for {round(person.message_percentage * 100)}% of all messages.")
+                print(f"{person.name} has sent {person.text_message_count} textmessages, accounting for {round(person.text_message_percentage * 100)}% of all textmessages.")
                 print(f"{person.name} has written {person.word_count} words, accounting for {round(person.word_percentage * 100)}% of all words.")
                 print(f"{person.name} has sent {person.file_count} files, accounting for {round(person.file_percentage * 100)}% of all files.")
                 print(f"{person.name} has sent {person.link_count} links, accounting for {round(person.link_percentage * 100)}% of all links.")
@@ -322,6 +326,10 @@ class Person:
     def calculate_message_percentage(self, message_count_total):
         """Calculates and updates the percentage of total messages sent by this person."""
         self.message_percentage = self.message_count / message_count_total if message_count_total > 0 else 0
+
+    def calculate_text_message_percentage(self, text_message_count_total):
+        """Calculates and updates the percentage of total messages sent by this person."""
+        self.text_message_percentage = self.text_message_count / text_message_count_total if text_message_count_total > 0 else 0
 
     def calculate_word_percentage(self, total_words):
         """Calculates and updates the percentage of total words written by this person."""
