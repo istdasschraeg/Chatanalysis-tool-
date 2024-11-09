@@ -23,33 +23,6 @@ participant_names = []
 
 #TO DO ADD INPUT FOR THIS ALSO ADD YOU TO ONE USER
 
-
-if enable_interface:
-    if participant_names.count()>2:
-        print(*participant_names)
-        print("Which of these is the name of the groupchat?")
-        excluded_names.append(input())
-        print("Which of these is your name?")
-        user_name=input()
-
-        number_of_replicates=0
-        print("Is any of these names a replication of Another? y/n")
-        if input()=="y":
-            while number_of_replicates==0:
-                print("Which one is the duplicate")
-                to_be_replaced=input()
-                print("Which one is the original")
-                to_be_kept=input()
-                t=0
-                for line in chat_lines:
-                    chat_lines[t]=chat_lines[t].replace(to_be_replaced,to_be_kept)
-                    t+=1
-                print("Are those all dublicates?")
-                if input()=="y":
-                    number_of_replicates+=1
-
-
-
 class Chatfile:
     def __init__(self,name):
         self.name=name
@@ -75,11 +48,9 @@ class Chatfile:
             with open(self.file_name, "r", encoding="utf8") as file:
                 self.chat_lines = file.readlines()
 
-        # Process lines to clean up and merge
-        self.clean_up_file()
-        self.extract_participant_names()
 
         def clean_up_file():
+            # Process lines to clean up and merge
             t = 0
 
             # Iterate through lines to merge any without a timestamp to the previous line
@@ -277,6 +248,14 @@ class Chatfile:
                 print(f"{person.name} has made {person.voice_call_count} voice calls, accounting for {round(person.voice_call_percentage * 100)}% of all voice calls.")
 
 
+        #Work:
+        self.clean_up_file()
+        self.extract_participant_names()
+        self.create_person_objects()
+        self.measure_time()
+        self.ANALyse_messages()
+        self.analyse_entiere_file()
+        self.output_file_analyses()
 
 # Define a class to represent each chat participant
 class Person:
