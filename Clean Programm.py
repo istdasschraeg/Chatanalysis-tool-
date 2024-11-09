@@ -20,8 +20,6 @@ if enable_interface:
 # Names of people participating in the chat
 participant_names = []
 
-#TO DO ADD INPUT FOR THIS ALSO ADD YOU TO ONE USER
-
 class Chatfile:
     def __init__(self,name):
         self.name=name

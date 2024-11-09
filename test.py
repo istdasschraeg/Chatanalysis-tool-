@@ -1,7 +1,20 @@
-i="1"
+from tkinter.simpledialog import *
+from tkinter.filedialog import *
+from tkinter import *
+from tkinter import messagebox
+top = Tk()
 
-thislist = []
-thislist.append(int(i))
-i="3"
-thislist.append(int(i))
-print(thislist[1])
+file_list=[]
+
+top.geometry("1000x1000")
+def show():
+   filename = askopenfile()
+   file_list.append
+
+
+   
+B1 = Button(top, text ="Input File Names", command = show)
+B1.place(x=500,y=500)
+
+top.mainloop()
+
