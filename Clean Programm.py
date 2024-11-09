@@ -6,6 +6,7 @@ enable_interface = False
 file_name = "DummeLeuteDieSchachSpielen.txt"
 excluded_names = ["\u200eYou", "DummeLeuteDieSchachSpiele","Ur Mum", "Maxim Helmer","Gott Der Fucking Welt"]
 user_name="Maxim"
+file_list=[]
 
 if enable_interface:
     print("What file should be opend")
@@ -16,6 +17,7 @@ if enable_interface:
 
 
 
+ 
 
 
 # Names of people participating in the chat
@@ -44,12 +46,20 @@ class Chatfile:
         self.total_deleted=0
         self.total_links=0
 
-        def load_file(self):
+        self.clean_up_file()
+        self.extract_participant_names()
+        self.create_person_objects()
+        self.measure_time()
+        self.ANALyse_messages()
+        self.analyse_entiere_file()
+        self.output_file_analyses()
+
+    def load_file(self):
             with open(self.file_name, "r", encoding="utf8") as file:
                 self.chat_lines = file.readlines()
 
 
-        def clean_up_file():
+    def clean_up_file(self):
             # Process lines to clean up and merge
             t = 0
 
@@ -65,7 +75,7 @@ class Chatfile:
                 else:        
                     t += 1
 
-        def extract_participant_names():
+    def extract_participant_names(self):
             # Extract and store unique names from the chat content
             for line in self.chat_lines:
             # Extract a possible name substring (between index 21 and 35)
@@ -105,13 +115,13 @@ class Chatfile:
                                 number_of_replicates+=1
 
 
-        def create_person_objects():
+    def create_person_objects(self):
             for participant_name in self.participant_names:
                 #print("What gender is ",participant_name,"?(male, female, other)")
                 gender = "other"  # Placeholder for user input
                 self.participant_objects.append(Person(participant_name, gender))
 
-        def measure_time():
+    def measure_time(self):
             for participant in participant_names:
                 person_index = 0
                 for line in self.chat_lines:
@@ -145,7 +155,7 @@ class Chatfile:
 
                     person_index += 1
                     line = line.replace("(Person)", participant)
-        def ANALyse_messages():
+    def ANALyse_messages(self):
             # Collect message content for each participant
             message_count_total = 0
             for person_index, participant in enumerate(participant_names):
@@ -191,7 +201,7 @@ class Chatfile:
                         if line.count ("http")>=1:
                             self.participant_objects[person_index].link_count+=1 
 
-        def analyse_entiere_file():
+    def analyse_entiere_file(self):
             # Creates a String with all the messages 
             new_total_text_content= ""
             for person in self.participant_objects:
@@ -220,7 +230,7 @@ class Chatfile:
                 self.person.calculate_voice_call_percentage(self.total_voice_calls)
                 self.person.calculate_links_percentage(self.total_links)
 
-        def output_file_analyses():
+    def output_file_analyses(self):
             # Final calculations for message and word percentages
             for person_index, participant in enumerate(self.participant_names):
                 person = self.participant_objects[person_index]
@@ -248,14 +258,8 @@ class Chatfile:
                 print(f"{person.name} has made {person.voice_call_count} voice calls, accounting for {round(person.voice_call_percentage * 100)}% of all voice calls.")
 
 
-        #Work:
-        self.clean_up_file()
-        self.extract_participant_names()
-        self.create_person_objects()
-        self.measure_time()
-        self.ANALyse_messages()
-        self.analyse_entiere_file()
-        self.output_file_analyses()
+    #Work:
+    
 
 # Define a class to represent each chat participant
 class Person:
@@ -361,3 +365,8 @@ class Person:
 #print("Total message count:", message_count_total)
 #print("Total word count:", len(new_total_text_content.split()))
 #print("Average words per message:", len(new_total_text_content.split()) / message_count_total)
+
+
+
+
+Chatfile(file_name)
