@@ -239,6 +239,7 @@ class Chatfile:
                 person.calculate_video_call_percentage(self.total_video_calls)
                 person.calculate_voice_call_percentage(self.total_voice_calls)
                 person.calculate_links_percentage(self.total_links)
+                
 
     def output_file_analyses(self):
             # Final calculations for message and word percentages
@@ -252,21 +253,23 @@ class Chatfile:
                 # Calculate percentages of total messages and words
                 person.message_percentage = person.message_count / self.total_message_count
                 person.word_percentage = person.word_count / len(self.new_total_text_content.split()) #
+                person.calculate_words_per_message()
                 
                 # Print statistics for each participant
-                print(f"{person.name} has sent {person.message_count} messages, accounting for {round(person.message_percentage * 100)}% of all messages.")
-                print(f"{person.name} has sent {person.text_message_count} textmessages, accounting for {round(person.text_message_percentage * 100)}% of all textmessages.")
-                print(f"{person.name} has written {person.word_count} words, accounting for {round(person.word_percentage * 100)}% of all words.")
-                print(f"{person.name} has sent {person.file_count} files, accounting for {round(person.file_percentage * 100)}% of all files.")
-                print(f"{person.name} has sent {person.link_count} links, accounting for {round(person.link_percentage * 100)}% of all links.")
-                print(f"{person.name} has sent {person.sticker_count} stickers, accounting for {round(person.sticker_percentage * 100)}% of all stickers.")
-                print(f"{person.name} has sent {person.audio_count} audios, accounting for {round(person.audio_percentage * 100)}% of all audios.")
-                print(f"{person.name} has sent {person.video_count} videos, accounting for {round(person.video_percentage * 100)}% of all videos.")
-                print(f"{person.name} has sent {person.image_count} images, accounting for {round(person.image_percentage * 100)}% of all images.")
-                print(f"{person.name} has edited {person.edit_count} messages, accounting for {round(person.edit_percentage * 100)}% of all edits.")
-                print(f"{person.name} has deleted {person.deleted_count} messages, accounting for {round(person.deleted_percentage * 100)}% of all deleted messages.")
-                print(f"{person.name} has made {person.video_call_count} video calls, accounting for {round(person.video_call_percentage * 100)}% of all video calls.")
-                print(f"{person.name} has made {person.voice_call_count} voice calls, accounting for {round(person.voice_call_percentage * 100)}% of all voice calls.")
+                print(f"{person.name} has sent {person.message_count} messages, accounting for {round(person.message_percentage * 100,2)}% of all messages.")
+                print(f"{person.name} has sent {person.text_message_count} textmessages, accounting for {round(person.text_message_percentage * 100,2)}% of all textmessages.")
+                print(f"{person.name} has written {person.word_count} words, accounting for {round(person.word_percentage * 100,2)}% of all words.")
+                print(f"{person.name} has sent {person.file_count} files, accounting for {round(person.file_percentage * 100,2)}% of all files.")
+                print(f"{person.name} has sent {person.link_count} links, accounting for {round(person.link_percentage * 100,2)}% of all links.")
+                print(f"{person.name} has sent {person.sticker_count} stickers, accounting for {round(person.sticker_percentage * 100,2)}% of all stickers.")
+                print(f"{person.name} has sent {person.audio_count} audios, accounting for {round(person.audio_percentage * 100,2)}% of all audios.")
+                print(f"{person.name} has sent {person.video_count} videos, accounting for {round(person.video_percentage * 100,2)}% of all videos.")
+                print(f"{person.name} has sent {person.image_count} images, accounting for {round(person.image_percentage * 100,2)}% of all images.")
+                print(f"{person.name} has edited {person.edit_count} messages, accounting for {round(person.edit_percentage * 100,2)}% of all edits.")
+                print(f"{person.name} has deleted {person.deleted_count} messages, accounting for {round(person.deleted_percentage * 100,2)}% of all deleted messages.")
+                print(f"{person.name} has made {person.video_call_count} video calls, accounting for {round(person.video_call_percentage * 100,2)}% of all video calls.")
+                print(f"{person.name} has made {person.voice_call_count} voice calls, accounting for {round(person.voice_call_percentage * 100,2)}% of all voice calls.")
+                print(f"{person.name} writes an aveage of {round(person.words_per_message,2)} words per message")
 
 
     #Work:
@@ -318,6 +321,7 @@ class Person:
         self.deleted_percentage = 0
         self.video_call_percentage = 0
         self.voice_call_percentage = 0
+        self.words_per_message=0
 
     def pretty_print_name(self):
         """Prints the name of the Person."""
@@ -374,6 +378,9 @@ class Person:
     def calculate_links_percentage(self, total_links):
         """Calculates and updates the percentage of total voice calls by this person."""
         self.link_percentage = self.link_count / total_links if total_links > 0 else 0
+    
+    def calculate_words_per_message(self):
+         self.words_per_message= self.word_count/self.message_count if self.message_count > 0 else 0
 
 
 # Final output of total message and word statistic
