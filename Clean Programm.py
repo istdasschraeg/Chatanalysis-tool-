@@ -6,15 +6,12 @@ enable_interface = False
 file_name = "DummeLeuteDieSchachSpielen.txt"
 excluded_names = ["\u200eYou", "DummeLeuteDieSchachSpiele","Ur Mum", "Maxim Helmer","Gott Der Fucking Welt"]
 user_name="Maxim"
-file_list=[]
+file_list=["DummeLeuteDieSchachSpielen.txt"]
+object_Chatfile_list =[]
 
 if enable_interface:
     print("What file should be opend")
-    file_name= input()
-    print("If it is a groupchat what name does it have?")
-    excluded_names.append(input())
-    print("What is Ur name")
-
+    file_list.apppend(input())
 
 
  
@@ -389,6 +386,7 @@ class Person:
 #print("Average words per message:", len(new_total_text_content.split()) / message_count_total)
 
 
+for file in file_list:
+    object_Chatfile_list.append(Chatfile(file))
 
 
-f1= Chatfile(file_name)
