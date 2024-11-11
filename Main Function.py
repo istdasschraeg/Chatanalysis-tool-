@@ -523,7 +523,7 @@ class ChatAnalysisGUI:
 
 
     def display_combined_statistics(self, tab):
-        """Display combined statistics for all chat files in a scrollable tab."""
+        #Display combined statistics for all chat files in a scrollable tab.
         self.clear_tab(tab)
 
         # Create a scrollable canvas
@@ -612,6 +612,63 @@ class ChatAnalysisGUI:
 
         canvas_chart = FigureCanvasTkAgg(fig, master=frame)
         canvas_chart.get_tk_widget().pack(pady=20)
+
+        # Preparing combined statistics text content
+        all_files_messages_by_person_dictionary = {}
+        list_names = []
+
+        for file in self.chat_files:
+            if len(file.participant_objects) ==2:
+                for person in file.participant_objects:
+                    if person.name != self.username:
+                        name_double = False
+                        for i in list_names:
+                            if i == person.name:
+                                all_files_messages_by_person_dictionary[person.name] += person.message_count
+                                name_double = True
+                                break
+                        if not name_double:
+                            all_files_messages_by_person_dictionary[person.name] = person.message_count
+                            list_names.append(person.name)
+        
+        # Filter out participants with <10% of messages divided by the total number of people
+        total_messages = sum(all_files_messages_by_person_dictionary.values())
+        number_of_people = len(all_files_messages_by_person_dictionary)
+        threshold = (0.7 / number_of_people) * total_messages
+        filtered_statistics = {name: count for name, count in all_files_messages_by_person_dictionary.items() if count >= threshold }
+
+        # Display statistics as text
+        displayed_stats = "\n".join(
+            f"Text messages from {name}: {count}"
+            for name, count in all_files_messages_by_person_dictionary.items()
+            
+        )
+
+        displayed_stats += f"\n Total Number of Messages not from groups:{total_messages}"
+ 
+        label = ttk.Label(
+            frame,
+            text=displayed_stats,
+            style="TLabel",
+            padding=(20, 10),
+            font=("Helvetica", 14),
+            justify="center"
+        )
+        label.pack(pady=(0, 20))
+
+        # Pie chart visualization
+        fig, ax = plt.subplots(figsize=(15, 15))
+        ax.pie(
+            filtered_statistics.values(),
+            labels=filtered_statistics.keys(),
+            autopct='%1.1f%%',
+            colors=["#66b3ff", "#99ff99", "#ffcc99", "#ff6666"],
+            startangle=140
+        )
+        ax.set_title("Combined Message Distribution not from groups", color="#ffffff", fontsize=12)
+
+        canvas_chart = FigureCanvasTkAgg(fig, master=frame)
+        canvas_chart.get_tk_widget().pack(pady=20)
         pass
 
     def display_file_statistics(self, tab, chat_file):
@@ -681,8 +738,7 @@ if __name__ == "__main__":
 #known bugs:
 
 # two files for one person
-# group and solo chat diffrence
-# minimal percentag points 
+
 
 """TO DO LIST:
 
@@ -703,16 +759,6 @@ if __name__ == "__main__":
     Topic Analyser
     personilsed language
     Politness meter
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
     
     
     """
