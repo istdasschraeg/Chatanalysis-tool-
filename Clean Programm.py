@@ -30,7 +30,6 @@ class Chatfile:
         self.total_words=0
         self.total_message_count=0
         self.total_textmessages=0
-        self.total_messages=0
         self.total_stickers=0
         self.total_images=0
         self.total_audios=0
