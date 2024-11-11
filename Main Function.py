@@ -14,6 +14,8 @@ if enable_interface:
     file_list.apppend(input())
 
 
+
+
  
 
 
@@ -86,7 +88,18 @@ class Chatfile:
                     
                     # Add the name to participant_names if it's new
                     if name not in self.participant_names and name not in excluded_names:
-                        self.participant_names.append(name)
+
+                        if colon_position > 20:
+                            t=0
+                            while t < len(self.chat_lines) - 1:
+                                self.chat_lines[t] = self.chat_lines[t].replace(name,line[21:40])
+                                t+=1 
+                            self.participant_names.append(line[21:40])
+
+                        else:
+                            self.participant_names.append(name)
+
+
 
             if enable_interface:
                 if participant_names.count()>2:
@@ -606,7 +619,7 @@ class ChatAnalysisGUI:
         self.clear_tab(tab)  # Ensure the tab is clean before populating
 
         # List of message types to cycle through
-        cycle_list = ["file", "sticker", "audio", "video", "image", "edit", "link", "deleted", "video_call", "voice_call", "text_message", "message"]
+        cycle_list = ["message","sticker", "audio", "video", "image", "edit", "link", "deleted","text_message", "video_call", "voice_call","file"]
 
         for item in cycle_list:
             # Create a labeled frame for each message type
@@ -627,6 +640,11 @@ class ChatAnalysisGUI:
                 for person in chat_file.participant_objects
             )
 
+            total_messages = sum(message_dictionary.values())
+            number_of_people = len(message_dictionary)
+            threshold = (0.1 / number_of_people) * total_messages
+            filtered_statistics = {name: count for name, count in message_dictionary.items() if count >= threshold}
+
             # Label for the displayed stats
             label = ttk.Label(frame, text=displayed_stats, style="TLabel", padding=(10, 10))
             label.pack()
@@ -635,8 +653,8 @@ class ChatAnalysisGUI:
             if total_count > 0:
                 fig, ax = plt.subplots(figsize=(5, 5))
                 ax.pie(
-                    message_dictionary.values(),
-                    labels=message_dictionary.keys(), 
+                    filtered_statistics.values(),
+                    labels=filtered_statistics.keys(), 
                     autopct='%1.1f%%',
                     colors=["#66b3ff", "#ff9999", "#99ff99", "#ffcc99", "#ff6666"],
                     startangle=140
@@ -661,14 +679,14 @@ if __name__ == "__main__":
 
 
 #known bugs:
-# too long names
+
 # two files for one person
 # group and solo chat diffrence
 # minimal percentag points 
 
 """TO DO LIST:
 
-    exclude names
+    exclude names fixed in 
     Sentiment Analyses
     emotions detection?
     Time of Day patters
