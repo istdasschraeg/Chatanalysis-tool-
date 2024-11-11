@@ -420,6 +420,9 @@ class ChatAnalysisGUI:
         style.configure("Vertical.TScrollbar", background="#444444", troughcolor="#1e1e1e", gripcount=0)
 
         # Set up main window layout
+        self.combining_two_files("Ada.txt","Ada2.txt")
+        self.combining_two_files("Christina.txt","Christina2.txt")
+        self.combining_two_files("Daniela.txt","Daniela2.txt")
         self.find_username()
         self.create_tabs()
 
@@ -676,7 +679,7 @@ class ChatAnalysisGUI:
         self.clear_tab(tab)  # Ensure the tab is clean before populating
 
         # List of message types to cycle through
-        cycle_list = ["message","sticker", "audio", "video", "image", "edit", "link", "deleted","text_message", "video_call", "voice_call","file"]
+        cycle_list = ["message","word","sticker", "audio", "video", "image", "edit", "link", "deleted","text_message", "video_call", "voice_call","file"]
 
         for item in cycle_list:
             # Create a labeled frame for each message type
@@ -691,9 +694,9 @@ class ChatAnalysisGUI:
 
             # Display the total number of messages for the current type
             total_count = sum(message_dictionary.values())
-            displayed_stats = f"Total number of {item} messages: {total_count}\n"
+            displayed_stats = f"Total number of {item}: {total_count}\n"
             displayed_stats += "\n".join(
-                f"{item.capitalize()} messages from {person.name}: {message_dictionary[person.name]}"
+                f"{item.capitalize()}  from {person.name}: {message_dictionary[person.name]}"
                 for person in chat_file.participant_objects
             )
 
@@ -725,6 +728,21 @@ class ChatAnalysisGUI:
 
     pass
 
+    def combining_two_files(self, chat_fileAname, chat_fileBname):
+        
+
+        for chat_file in self.chat_files:
+            if chat_file.name ==chat_fileAname:
+                chatfileA= chat_file
+                for chat_fileB in self.chat_files:
+                    if chat_fileB.name ==chat_fileBname:
+                        chatfileA.chat_lines.append ( chat_fileB.chat_lines)
+                        self.chat_files.remove(chat_fileB)
+
+        
+
+        
+
 
 
 if __name__ == "__main__":
@@ -742,7 +760,7 @@ if __name__ == "__main__":
 
 """TO DO LIST:
 
-    exclude names fixed in 
+    exclude names 
     Sentiment Analyses
     emotions detection?
     Time of Day patters
