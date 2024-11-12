@@ -1,5 +1,15 @@
 import re
+from datetime import date
+import tkinter as tk
+from tkinter import ttk
+import matplotlib.pyplot as plt
+from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
+from nltk.sentiment.vader import SentimentIntensityAnalyzer
+import nltk
+nltk.download('vader_lexicon')
 
+# Initialize the Sentiment Intensity Analyzer
+sid = SentimentIntensityAnalyzer()
 # Global variables
 timestamp_pattern = r"\[\d{2}\.\d{2}\.\d{2}, \d{2}:\d{2}:\d{2}\]"
 enable_interface = False
@@ -11,7 +21,7 @@ object_Chatfile_list =[]
 
 if enable_interface:
     print("What file should be opend")
-    file_list.apppend(input())
+    file_list.append(input())
 
 
 
@@ -45,6 +55,13 @@ class Chatfile:
         self.total_links=0
         self.time_str =""
         self.date_str = ""
+
+        self.count_messages_per_timeframe={}
+        self.text_messages_per_timeframe={}
+        self.count_messages_per_timeframe_daily={}
+        self.text_messages_per_timeframe_daily={}
+        self.count_messages_per_timeframe_monthly={}
+        self.text_messages_per_timeframe_monthly={}
 
         self.load_file()
         self.clean_up_file()
@@ -133,6 +150,7 @@ class Chatfile:
                 self.participant_objects.append(Person(participant_name, gender))
 
     def measure_time(self):
+
             for participant in self.participant_names:
                 person_index = 0
                 for line in self.chat_lines:
@@ -147,25 +165,29 @@ class Chatfile:
                             
                             # Extract and store individual time components
                             hour = int(line[11:13])
-                            self.participant_objects[person_index].hours.append(hour)
-                            
                             minute = int(line[14:16])
-                            self.participant_objects[person_index].minutes.append(minute)
-
                             second = int(line[17:19])
-                            self.participant_objects[person_index].seconds.append(second)
-
                             day = int(line[1:3])
-                            self.participant_objects[person_index].days.append(day)
-
                             month = int(line[4:6])
-                            self.participant_objects[person_index].months.append(month)
-
                             year = int(line[7:9])
-                            self.participant_objects[person_index].years.append(year)
+
+                            #add to the dictionary
+                            self.count_messages_per_timeframe[participant][year][month][day][hour] += 1
+                            self.text_messages_per_timeframe[participant][year][month][day][hour] +=line 
+                            self.text_messages_per_timeframe_daily[participant][year][month][day] +=line 
+                            self.count_messages_per_timeframe_daily[participant][year][month][day]+=1
+                            self.text_messages_per_timeframe_monthly[participant][year][month]+=line 
+                            self.count_messages_per_timeframe_monthly[participant][year][month]+=1
 
                     person_index += 1
                     line = line.replace("(Person)", participant)
+
+    def analyze_mood_vader(text):
+        scores = sid.polarity_scores(text)
+        compound_score = scores['compound']
+        
+        return scores   
+
     def ANALyse_messages(self):
             # Collect message content for each participant
             message_count_total = 0
@@ -203,8 +225,7 @@ class Chatfile:
                         else:
                             message_start = line.find(participant) + len(participant)
                             self.participant_objects[person_index].messages.append(line[message_start:])
-                            self.participant_objects[person_index].text_message_count += 1
-                            
+                            self.participant_objects[person_index].text_message_count += 1  
 
                         if line.count ("<This message was edited>")==1:
                             self.participant_objects[person_index].edit_count+=1 
@@ -217,7 +238,6 @@ class Chatfile:
             self.new_total_text_content= ""
             for person in self.participant_objects:
                 self.new_total_text_content+= " ".join(person.messages)  
-
 
                 self.total_files = sum(person.file_count for person in self.participant_objects)
                 self.total_stickers = sum(person.sticker_count for person in self.participant_objects)
@@ -252,36 +272,13 @@ class Chatfile:
     def output_file_analyses(self):
             # Final calculations for message and word percentages
             for person in self.participant_objects:
-                
-                
                 # Combine all messages as a single text block and calculate word count
                 person.text_content = " ".join(person.messages)
                 person.word_count = len(person.text_content.split())
                 
                 # Calculate percentages of total messages and words
-                person.message_percentage = person.message_count / self.total_message_count
                 person.word_percentage = person.word_count / len(self.new_total_text_content.split()) #
                 person.calculate_words_per_message()
-                
-                # Print statistics for each participant
-                #print(f"{person.name} has sent {person.message_count} messages, accounting for {round(person.message_percentage * 100,2)}% of all messages.")
-                #print(f"{person.name} has sent {person.text_message_count} textmessages, accounting for {round(person.text_message_percentage * 100,2)}% of all textmessages.")
-                #print(f"{person.name} has written {person.word_count} words, accounting for {round(person.word_percentage * 100,2)}% of all words.")
-                #print(f"{person.name} has sent {person.file_count} files, accounting for {round(person.file_percentage * 100,2)}% of all files.")
-                #print(f"{person.name} has sent {person.link_count} links, accounting for {round(person.link_percentage * 100,2)}% of all links.")
-                #print(f"{person.name} has sent {person.sticker_count} stickers, accounting for {round(person.sticker_percentage * 100,2)}% of all stickers.")
-                #print(f"{person.name} has sent {person.audio_count} audios, accounting for {round(person.audio_percentage * 100,2)}% of all audios.")
-                #print(f"{person.name} has sent {person.video_count} videos, accounting for {round(person.video_percentage * 100,2)}% of all videos.")
-                #print(f"{person.name} has sent {person.image_count} images, accounting for {round(person.image_percentage * 100,2)}% of all images.")
-                #print(f"{person.name} has edited {person.edit_count} messages, accounting for {round(person.edit_percentage * 100,2)}% of all edits.")
-                #print(f"{person.name} has deleted {person.deleted_count} messages, accounting for {round(person.deleted_percentage * 100,2)}% of all deleted messages.")
-                #print(f"{person.name} has made {person.video_call_count} video calls, accounting for {round(person.video_call_percentage * 100,2)}% of all video calls.")
-                #print(f"{person.name} has made {person.voice_call_count} voice calls, accounting for {round(person.voice_call_percentage * 100,2)}% of all voice calls.")
-                #print(f"{person.name} writes an aveage of {round(person.words_per_message,2)} words per message")
-
-
-    #Work:
-    
 
 # Define a class to represent each chat participant
 class Person:
@@ -376,23 +373,8 @@ class Person:
     def calculate_words_per_message(self):
          self.words_per_message= self.word_count/self.message_count if self.message_count > 0 else 0
 
-
-# Final output of total message and word statistic
-#print("Total message count:", message_count_total)
-#print("Total word count:", len(new_total_text_content.split()))
-#print("Average words per message:", len(new_total_text_content.split()) / message_count_total)
-
-
 for file in file_list:
     object_Chatfile_list.append(Chatfile(file))
-
-
-import tkinter as tk
-from tkinter import ttk
-import matplotlib.pyplot as plt
-from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
-
-
 class ChatAnalysisGUI:
     def __init__(self, root, chat_files):
         self.root = root
@@ -520,10 +502,11 @@ class ChatAnalysisGUI:
         scrollable_frame.bind("<Configure>", update_canvas)
         canvas.bind("<Configure>", lambda event: update_canvas(None))
 
-        # Display file-specific statistics
+        # Display file-specific statistics and hourly statistics section
         self.display_file_statistics(scrollable_frame, chat_file)
-
-
+        self.display_hourly_statistics(scrollable_frame, chat_file)
+    
+    
 
     def display_combined_statistics(self, tab):
         #Display combined statistics for all chat files in a scrollable tab.
@@ -726,7 +709,11 @@ class ChatAnalysisGUI:
                 no_data_label = ttk.Label(frame, text="No data to display for this category.", style="TLabel", padding=(10, 10))
                 no_data_label.pack()
 
-    pass
+        hourly_stats_frame = ttk.LabelFrame(tab, text="Hourly Statistics", style="TLabelframe")
+        hourly_stats_frame.pack(fill="x", padx=5, pady=5)
+        self.display_hourly_statistics(hourly_stats_frame, chat_file)
+
+        pass
 
     def combining_two_files(self, chat_fileAname, chat_fileBname):
         
@@ -736,14 +723,76 @@ class ChatAnalysisGUI:
                 chatfileA= chat_file
                 for chat_fileB in self.chat_files:
                     if chat_fileB.name ==chat_fileBname:
-                        chatfileA.chat_lines.append ( chat_fileB.chat_lines)
+                        chatfileA.chat_lines.extend ( chat_fileB.chat_lines)
                         self.chat_files.remove(chat_fileB)
 
-        
+    def display_hourly_statistics(self, parent, chat_file):
+        # Frame for displaying hourly statistics
+        hourly_stats_frame = ttk.LabelFrame(parent, text="Hourly Statistics", style="TLabelFrame")
+        hourly_stats_frame.pack(fill="x", padx=10, pady=10)
+
+        # Participant selector
+        participant_names = [p.name for p in chat_file.participant_objects]
+        self.participant_selector = ttk.Combobox(hourly_stats_frame, values=participant_names, state="readonly")
+        self.participant_selector.bind("<<ComboboxSelected>>", lambda _: self.update_hourly_chart(chat_file))
+        self.participant_selector.pack(pady=5)
+
+        # Year selector
+        years = sorted({year for year_data in chat_file.count_messages_per_timeframe.values() for year in year_data.keys()})
+        self.year_selector = ttk.Combobox(hourly_stats_frame, values=years, state="readonly")
+        self.year_selector.bind("<<ComboboxSelected>>", lambda _: self.update_hourly_chart(chat_file))
+        self.year_selector.pack(pady=5)
+
+        # Month selector
+        months = list(range(1, 13))  # Months from January to December
+        self.month_selector = ttk.Combobox(hourly_stats_frame, values=months, state="readonly")
+        self.month_selector.bind("<<ComboboxSelected>>", lambda _: self.update_hourly_chart(chat_file))
+        self.month_selector.pack(pady=5)
+
+        # Day selection scale
+        self.day_scale = tk.Scale(hourly_stats_frame, from_=1, to=31, orient="horizontal", length=250,
+                                label="Select Day", command=lambda _: self.update_hourly_chart(chat_file))
+        self.day_scale.pack(pady=5)
+
+        # Matplotlib figure for hourly message count chart
+        self.fig, self.ax = plt.subplots(figsize=(6, 4))
+        self.ax.set_facecolor("#1e1e1e")
+        self.ax.tick_params(colors="white")
+        self.canvas = FigureCanvasTkAgg(self.fig, master=hourly_stats_frame)
+        self.canvas.get_tk_widget().pack()
+
+    def update_hourly_chart(self, chat_file):
+        participant_name = self.participant_selector.get()
+        try:
+            selected_year = int(self.year_selector.get())
+            selected_month = int(self.month_selector.get())
+            selected_day = int(self.day_scale.get())
+        except ValueError:
+            # Handle case where no selection is made
+            return
+
+        # Initialize hourly data for 24 hours
+        hourly_data = [0] * 24
+        if participant_name in chat_file.count_messages_per_timeframe:
+            try:
+                # Access the hourly data for the selected year, month, and day
+                hourly_data_dict = chat_file.count_messages_per_timeframe[participant_name][selected_year][selected_month][selected_day]
+                hourly_data = [hourly_data_dict.get(hour, 0) for hour in range(24)]
+            except KeyError:
+                # Date not found, use default empty data
+                pass
+
+        # Update the bar chart
+        self.ax.clear()
+        self.ax.set_title(f"Hourly Messages for {participant_name} - {selected_year}/{selected_month}/{selected_day}", color="white")
+        self.ax.bar(range(24), hourly_data, color="#3498db")
+        self.ax.set_xticks(range(24))
+        self.ax.set_xlabel("Hour of the Day", color="white")
+        self.ax.set_ylabel("Messages Sent", color="white")
+        self.ax.tick_params(colors="white")
+        self.canvas.draw_idle()
 
         
-
-
 
 if __name__ == "__main__":
     root = tk.Tk()
@@ -751,32 +800,49 @@ if __name__ == "__main__":
     app = ChatAnalysisGUI(root, chat_files)
     root.mainloop()
 
-
-
 #known bugs:
-
-# two files for one person
+# 
 
 
 """TO DO LIST:
 
-    exclude names 
+    exclude names(through min participation ) 
     Sentiment Analyses
     emotions detection?
+    include one number statistics in display like: messages per time or words per message
     Time of Day patters
+
+        dictionary with each hour when message 
+            one with the count and one with the text(for analysis)
+
     Month Year inlfux of texts
     Message Batch recognition
     Instagramm extension
     Responds time Analyses (with certain modifable thresholds)
+    
     GUI with possiblity of 
         identifying doubles in group chats
         insta whatsapp identification
+
     Conversation starter (Useres that start a conversation)
     Mentions 
     Emojis?
     Topic Analyser
     personilsed language
     Politness meter
+
+    Interface that can:
+
+        find and acess Folder where txt are
+        ask User for which chats to combine 
+        ask User to possily combine Insta and whatsapp chats  
+        ask User if they want to remove certain names
+
     
+        
+        For Instagramm analysis:
+
+            maybe remove reels enterly and just let Omitted stand there
     
     """
+
