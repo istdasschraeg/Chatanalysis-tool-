@@ -1,217 +1,128 @@
-#print("hello world")
-import re
-enable_interface= False
-if True==False:
-    print("what file do u want to open?")
-    file_name= input()
-file_name = "Lena.txt"
-file = open (file_name,"r",encoding="utf8")
-content=file.readlines ()
-inttimehours =[]
-inttimeminutes =[]
-inttimeseconds =[]
-inttimedays=[]
-inttimemonths=[]
-inttimeyears=[]
-distance_to_next_message =0
-length = len(content)
-previousname ="(Person)"
-totalseconds=0
+import sys
+from PyQt6.QtWidgets import QApplication, QWidget, QVBoxLayout, QTabWidget, QScrollArea, QComboBox, QLabel
+from PyQt6.QtCharts import QChart, QChartView, QPieSeries
+from PyQt6.QtGui import QPainter
 
-Name1 = "Lena S"
-Name2 = "Maxim"
-Names_of_people = []
-
-for i in content:
-    
-    #print("stelle:", i[21:35] )
-    colon_position = i[21:35].find(":")
-    #print (colon_position)
-
-    if colon_position != -1:
+class FileStatisticsGUI(QWidget):
+    def __init__(self, object_Chatfile_list):
+        super().__init__()
+        self.setWindowTitle("Whatsapp Analyser")
+        self.chat_files = object_Chatfile_list
+        self.init_ui()
+        self.username=""
         
-        colon_position += 21
+    def init_ui(self):
+        self.setGeometry(100, 100, 1200, 900)
+        layout = QVBoxLayout(self)
         
-        #print("Position:",colon_position)
-        substring = i[21:colon_position]
-        substring= substring.strip()
-        #print("Name:",substring)
-        #print(i)
-
-
-        new_name=True
+        self.tab_widget = QTabWidget()
+        layout.addWidget(self.tab_widget)
         
-        for x in Names_of_people:
+        for file in self.chat_files:
+            # Create a scrollable area for each file tab
+            scroll_area = QScrollArea()
+            scroll_area.setWidgetResizable(True)
             
-            if x==substring:
-                new_name=False
-                #print("lol")
-
-        if new_name==True:
-            Names_of_people.append(substring)
-            new_name=False
-
-
-print (Names_of_people)
-        
-
-class Person:
-    def __init__(self, name,gender):
-        self.name = name
-        self.gender =gender
-
-        #for monthly/weekley stats
-        self.inttimehours =[]
-        self.inttimeminutes =[]
-        self.inttimeseconds =[]
-        self.inttimedays=[]
-        self.inttimemonths=[]
-        self.inttimeyears=[]
-        self.count_document=0
-        self.count_pictures=0
-        self.count_sticker=0
-        self.count_audio=0
-        self.count_video=0
-        self.count_word=0
-        self.count_messages=0
-        self.content=[]
-        self.word_percent=0
-        self.messages_percent=0
-        self.content_astext= ""
-        
-
-
-        self.pretty_print_name()
-    def pretty_print_name(self):
-        print("This Persons name is {}.".format(self.name))
-
-my_list = []
-number_of_people =0
-for i in Names_of_people:
-
-    print ("What gender is ",i,"?(male, female, other)")
-    #gender= input()
-    gender ="other"
-    my_list.append (Person(i,gender) )
-    number_of_people+=1
-
-#print (*my_list)
-#print(str(1)+'data')
-
-t=0
-i =0  
-for x in Names_of_people:
-    for i in content:
-        
-        if i[0:1] == "[":
-            i=i.replace(x, "(Person)")
-            i=i.replace("Ã¼","ue")
-            i=i.replace("â€Ž","") 
-            #i=i.replace("[U+200E]","") 
-
-            if i[21:29] == x:
-                time =i[12:19]
-                #print("time_send:"+time)
-                date= i[2:10] 
-                #print("date sent:"+ date )
-
-                timehours=int(i[11:13])
-                #print ("hours:"+str(timehours))
-                #print ("t:"+str(t))
-                my_list[t].inttimehours.append(timehours)
-                #print (inttimehours)
-                #print (inttimehours[t]) 
-
-                timeminutes=i[14:16]
-                print(timeminutes)
-                print(i)
-                #print ("minutes:"+timeminutes)
-                my_list[t].inttimeminutes.append( int (timeminutes))
-                #print (inttimeminutes)
-
-                timeseconds=i[17:19]
-                #print ("seconds:"+timeseconds)
-                my_list[t].inttimeseconds.append( int (timeseconds))
-                #print (inttimeseconds)
-
-                timedays= int(i[1:3])
-                my_list[t].inttimedays.append(timedays)
-                #print("days:",timedays)
-
-                timemonths= int(i[4:6])
-                my_list[t].inttimemonths.append(timemonths)
-                #print("months:", timemonths)
-
-                timeyears= int(i[7:9])
-                my_list[t].inttimeyears.append(timeyears)
-        #print (i)
-
-        t=t+1
-        i=i.replace("(Person)",x)    
-
-    else:
-        continue
-    
-
-
-#print("Sekundenanzahl insgesamt: "+str(totalseconds))
-#print ("Interval der Nachrichten: "+str(totalseconds/t))
-
-t=0
-astext=""
-
-textfromperson1 =False
-
-lol=0
-lul=100
-file = open (file_name,"r",encoding="utf8")
-rest=[]
-t=0
-
-timestamp_pattern = r"\[\d{2}\.\d{2}\.\d{2}, \d{2}:\d{2}:\d{2}\]"
-       
-while t < len(content) - 1:
-    content[t] = content[t].strip()
-    content[t] = content[t].replace("Ã¼", "ue").replace("â€Ž", "")
-    
-    if not re.match(timestamp_pattern, content[t + 1]) and content[t+1].find("omitted")>=0:
-        
-        content[t] += " " + content[t + 1]
-        print ("This was removed:",content[t+1] )
-        content.pop(t + 1)          
-    else:        
-        t += 1
-t=0
-
-for x in Names_of_people:
-    t=0
-    for i in content:
-        i=i.replace("\u200e", "")
-        i=i.replace("Ã¼","ue").replace("â€Ž","").replace("/n","")
-
-        place_name_found=0
-        #print (i.find(x))
-        #print ("length:",len(x))
-        
-        if i.find(Names_of_people[0]) >=0:
-            place_name_found=i.find(x)+len(x)
+            # Create a container widget for each file tab's content
+            file_tab_content = QWidget()
+            file_tab_layout = QVBoxLayout(file_tab_content)
             
-            my_list[lol].content.append(i[place_name_found:])
-            my_list[lol].count_messages+=1
-        elif i.find(Names_of_people[1]) >=0:
-            place_name_found=i.find(x)+len(x)
+            # Add combo box and label for displaying options and selected data
+            combo_box = QComboBox()
+            combo_box.addItems(["message", "word", "sticker", "audio", "video", "image", "edit", "link", "deleted"])
+            label = QLabel("Selected option will appear here")
             
-            my_list[lol].content.append(i[place_name_found:])
-            my_list[lol].count_messages+=1
-        else:
-            rest.append(i)               
-        t+=1
+            file_tab_layout.addWidget(combo_box)
+            file_tab_layout.addWidget(label)
+            
+            # Placeholder layout for charts
+            chart_layout = QVBoxLayout()
+            file_tab_layout.addLayout(chart_layout)
+            
+            # Connect the combo box to the display method with a unique scope for each file
+            combo_box.currentTextChanged.connect(lambda text, file=file, label=label, chart_layout=chart_layout: 
+                                                 self.display_file_statistics(text, file, label, chart_layout))
+            
+            # Set the file_tab_content as the widget of the scroll area
+            scroll_area.setWidget(file_tab_content)
 
-    print(my_list[lol].count_messages)
-    lol+=1
-    
-for i in rest:
-    print(i)
-    t=t
+            self.tab_widget.addTab(scroll_area, f"Statistics for {file.name}")
+        
+        self.setLayout(layout)
 
+    def display_file_statistics(self, text, chat_file, label, chart_layout):
+        # Update the label with the selected option
+        label.setText(f"Statistics for {text}")
 
+        # Clear the old chart views from the layout
+        for i in reversed(range(chart_layout.count())):
+            widget_to_remove = chart_layout.itemAt(i).widget()
+            if widget_to_remove is not None:
+                widget_to_remove.deleteLater()
+                chart_layout.removeWidget(widget_to_remove)
+
+        # Create a new pie chart per item
+        series = QPieSeries()
+        for person in chat_file.participant_objects:
+            count = int(getattr(person, f"{text}_count", 0) or 0)
+            if count > 0:
+                series.append(person.name, count)
+
+        if not series.slices():
+            return  # No data to show for this option
+        
+        # Create a chart for the series
+        chart = QChart()
+        chart.addSeries(series)
+        chart.setTitle(f"{text.capitalize()} Statistics")
+
+        # Create a QChartView to display the chart
+        chart_view = QChartView(chart)
+        chart_view.setRenderHint(QPainter.RenderHint.Antialiasing)
+
+        # Add the chart view to the chart layout
+        chart_layout.addWidget(chart_view)
+
+    def find_username(self):
+        """Determine the most active username from chat data."""
+        list_names = {}
+        list_of_done = []
+        name_double = False
+
+        for file in self.chat_files:
+            for person in file.participant_objects:
+                for i in list_of_done:
+                    if i == person.name:
+                        list_names[person.name] += 1
+                        name_double = True
+
+                if not name_double:
+                    list_names[person.name] = 1
+                    list_of_done.append(person.name)
+
+        self.username = max(list_names, key=list_names.get)
+        print("Username detected:", self.username)
+
+if __name__ == "__main__":
+    # Dummy data for testing purposes
+    class Participant:
+        def __init__(self, name, message_count=0, word_count=0, sticker_count=0):
+            self.name = name
+            self.message_count = message_count
+            self.word_count = word_count
+            self.sticker_count = sticker_count
+
+    class ChatFile:
+        def __init__(self, name, participants):
+            self.name = name
+            self.participant_objects = participants
+
+    participants = [Participant("Alice", message_count=100, word_count=200),
+                    Participant("Bob", message_count=150, word_count=250)]
+    object_Chatfile_list = [ChatFile("Chat 1", participants), ChatFile("Chat 2", participants)]
+
+    app = QApplication(sys.argv)
+    window = FileStatisticsGUI(object_Chatfile_list)
+    window.resize(1200, 900)
+    window.show()
+    sys.exit(app.exec())

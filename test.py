@@ -391,200 +391,181 @@ for file in file_list:
 
 
 
+from PyQt6.QtWidgets import (QMainWindow, QTabWidget, QFrame, QVBoxLayout, QLabel, 
+                             QComboBox, QScrollArea, QWidget, QSlider)
+from PyQt6.QtCore import Qt
+from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
+from matplotlib.figure import Figure
+
 class ChatAnalysisGUI(QMainWindow):
     def __init__(self, chat_files):
         super().__init__()
         self.chat_files = chat_files
         self.username = ""
-        
-        self.setWindowTitle("Chat Analysis")
+        self.active_tab = None
         self.setGeometry(100, 100, 1200, 800)
-        
-        self.tabs = QTabWidget()
-        self.setCentralWidget(self.tabs)
-        
+
+        self.setWindowFlag(Qt.WindowType.FramelessWindowHint)
+        self.setStyleSheet("background-color: #1e1e1e;")
+
+        self.tab_widget = QTabWidget(self)
+        self.tab_widget.setStyleSheet("""
+            QTabWidget::pane { border: 0; }
+            QTabBar::tab { background: #333333; color: white; padding: 10px; }
+            QTabBar::tab:selected { background: #444444; }
+        """)
+
+        self.combining_two_files("Ada.txt", "Ada2.txt")
+        self.combining_two_files("Christina.txt", "Christina2.txt")
+        self.combining_two_files("Daniela.txt", "Daniela2.txt")
+        self.find_username()
         self.create_tabs()
-       
 
-    
-
-    def display_combined_statistics(self, tab: QWidget):
-        """Display combined statistics for all chat files in a scrollable tab."""
-        # Clear previous content if any
-        for i in reversed(range(tab.layout().count())):
-            tab.layout().itemAt(i).widget().deleteLater()
-
-        # Create a scrollable area
-        scroll_area = QScrollArea(tab)
-        scroll_area.setWidgetResizable(True)
-        scroll_content = QWidget()
-        scroll_area.setWidget(scroll_content)
-        scroll_layout = QVBoxLayout(scroll_content)
-
-        # Add combined statistics content
-        combined_frame = QFrame()
-        combined_layout = QVBoxLayout(combined_frame)
-        combined_frame.setStyleSheet("background-color: #2b2b2b; color: #ffffff; padding: 20px;")
-
-        # Preparing combined statistics text content
-        all_files_messages_by_person_dictionary = {}
-        list_names = []
+    def find_username(self):
+        list_names = {}
+        list_of_done = []
+        name_double = False
 
         for file in self.chat_files:
             for person in file.participant_objects:
-                if person.name != self.username:
-                    if person.name in all_files_messages_by_person_dictionary:
-                        all_files_messages_by_person_dictionary[person.name] += person.message_count
-                    else:
-                        all_files_messages_by_person_dictionary[person.name] = person.message_count
+                if person.name in list_of_done:
+                    list_names[person.name] += 1
+                    name_double = True
+                elif not name_double:
+                    list_names[person.name] = 1
+                    list_of_done.append(person.name)
 
-        total_messages = sum(all_files_messages_by_person_dictionary.values())
-        number_of_people = len(all_files_messages_by_person_dictionary)
-        threshold = (0.7 / number_of_people) * total_messages
-        filtered_statistics = {name: count for name, count in all_files_messages_by_person_dictionary.items() if count >= threshold}
-
-        # Display statistics as text
-        displayed_stats = "\n".join(
-            f"Text messages from {name}: {count}"
-            for name, count in all_files_messages_by_person_dictionary.items()
-        )
-        displayed_stats += f"\n Total Number of Messages: {total_messages}"
-        label = QLabel(displayed_stats)
-        label.setStyleSheet("font-size: 14px; color: #cccccc; padding: 10px;")
-        combined_layout.addWidget(label)
-
-        # Pie chart visualization
-        fig, ax = plt.subplots(figsize=(5, 5))
-        ax.pie(
-            filtered_statistics.values(),
-            labels=filtered_statistics.keys(),
-            autopct='%1.1f%%',
-            colors=["#66b3ff", "#99ff99", "#ffcc99", "#ff6666"],
-            startangle=140
-        )
-        ax.set_title("Combined Message Distribution", color="#ffffff", fontsize=12)
-
-        canvas_chart = FigureCanvas(fig)
-        combined_layout.addWidget(canvas_chart)
-        scroll_layout.addWidget(combined_frame)
-        tab.layout().addWidget(scroll_area)
-
-    def display_file_statistics(self, tab: QWidget, chat_file):
-        """Display individual file statistics in PyQt6."""
-        for i in reversed(range(tab.layout().count())):
-            tab.layout().itemAt(i).widget().deleteLater()
-
-        scroll_area = QScrollArea()
-        scroll_area.setWidgetResizable(True)
-        scroll_content = QWidget()
-        scroll_layout = QVBoxLayout(scroll_content)
-        scroll_content.setLayout(scroll_layout)
-
-        combined_frame = QFrame()
-        combined_layout = QVBoxLayout(combined_frame)
-        combined_frame.setStyleSheet("background-color: #2b2b2b; color: #ffffff; padding: 20px;")
-        combined_layout.addWidget(QLabel("Example Combined Statistics"))  # Example content
-        scroll_layout.addWidget(combined_frame)
-
-        scroll_area.setWidget(scroll_content)
-        tab.layout().addWidget(scroll_area)
-
-        cycle_list = ["message", "word", "sticker", "audio", "video", "image", "edit", "link", "deleted", "text_message", "video_call", "voice_call", "file"]
-
-        for item in cycle_list:
-            frame = QFrame()
-            frame_layout = QVBoxLayout(frame)
-            frame.setStyleSheet("background-color: #2b2b2b; color: #ffffff; padding: 20px;")
-            frame.setFrameShape(QFrame.Shape.StyledPanel)
-
-            message_dictionary = {
-                person.name: int(getattr(person, f"{item}_count", 0) or 0)
-                for person in chat_file.participant_objects
-            }
-
-            total_count = sum(message_dictionary.values())
-            displayed_stats = f"Total number of {item}: {total_count}\n" + "\n".join(
-                f"{item.capitalize()} from {person.name}: {count}" for person, count in message_dictionary.items()
-            )
-            label = QLabel(displayed_stats)
-            label.setStyleSheet("font-size: 14px; color: #cccccc; padding: 10px;")
-            frame_layout.addWidget(label)
-
-            # Pie chart visualization if data exists
-            if total_count > 0:
-                fig, ax = plt.subplots(figsize=(5, 5))
-                ax.pie(
-                    [count for count in message_dictionary.values() if count >= 0.1 * total_count],
-                    labels=[name for name in message_dictionary.keys() if message_dictionary[name] >= 0.1 * total_count],
-                    autopct='%1.1f%%',
-                    colors=["#66b3ff", "#ff9999", "#99ff99", "#ffcc99", "#ff6666"],
-                    startangle=140
-                )
-                ax.set_title(f"{chat_file.name}'s {item.capitalize()} Breakdown", color="#ffffff", fontsize=12)
-                canvas_chart = FigureCanvas(fig)
-                frame_layout.addWidget(canvas_chart)
-            else:
-                no_data_label = QLabel("No data to display for this category.")
-                no_data_label.setStyleSheet("font-size: 12px; color: #ff6666; padding: 10px;")
-                frame_layout.addWidget(no_data_label)
-
-            scroll_layout.addWidget(frame)
-
-        tab.layout().addWidget(scroll_area)
-
+        self.username = max(list_names, key=list_names.get)
+        print("Username detected:", self.username)
 
     def create_tabs(self):
-        # Create combined statistics tab
-        combined_tab = QWidget()
-        combined_layout = QVBoxLayout(combined_tab)
-        
-        combined_scroll = QScrollArea()
-        combined_content = QWidget()
-        combined_layout_inner = QVBoxLayout(combined_content)
-        
-        # Here, you can add combined statistics content like labels or pie charts
-        combined_layout_inner.addWidget(QLabel("Combined Statistics"))
-        
-        combined_scroll.setWidget(combined_content)
-        combined_scroll.setWidgetResizable(True)
-        combined_layout.addWidget(combined_scroll)
-        self.tabs.addTab(combined_tab, "Combined Statistics")
-        
-        # Individual file tabs
-        for chat_file in self.chat_files:
-            file_tab = QWidget()
-            file_layout = QVBoxLayout(file_tab)
-            
-            # Similar setup for scrollable area with statistics
-            scroll = QScrollArea()
-            content = QWidget()
-            layout_inner = QVBoxLayout(content)
-            layout_inner.addWidget(QLabel(f"Statistics for {chat_file.name}"))
-            
-            # Add more specific widgets for each chat file here
-            
-            scroll.setWidget(content)
-            scroll.setWidgetResizable(True)
-            file_layout.addWidget(scroll)
-            self.tabs.addTab(file_tab, chat_file.name)
-    
-    
+    # Create the combined statistics tab
+        self.combined_tab = QWidget()
+        self.tab_widget.addTab(self.combined_tab, "Combined Statistics 📊")
+        self.display_combined_statistics(self.combined_tab)  # Call combined statistics once
 
+        # Create individual file tabs
+        self.file_tabs = {}
+        self.tab_loaded = {}  # Track loaded tabs to avoid reloading
+
+        for file in self.chat_files:
+            file_tab = QWidget()
+            self.tab_widget.addTab(file_tab, file.name)
+            self.file_tabs[file.name] = file_tab
+            self.tab_loaded[file.name] = False  # Mark the tab as not yet loaded
+
+        # Connect the tab change event
+        self.tab_widget.currentChanged.connect(self.on_tab_change)
+
+    def on_tab_change(self, index):
+    # Get the selected tab name
+        selected_tab_name = self.tab_widget.tabText(index)
+
+        if selected_tab_name == "Combined Statistics 📊":
+            # Show combined statistics content if not already loaded
+            if not self.tab_loaded.get("Combined Statistics"):
+                self.combined_statistics(self.combined_tab)
+                self.tab_loaded["Combined Statistics"] = True
+        else:
+            # Show file statistics if the tab is not already loaded
+            if not self.tab_loaded.get(selected_tab_name, False):
+                file = next(file for file in self.chat_files if file.name == selected_tab_name)
+                self.file_statistics(self.file_tabs[selected_tab_name], file)
+                self.tab_loaded[selected_tab_name] = True
+
+    def clear_tab(self, tab):
+        for widget in tab.children():
+            widget.deleteLater()
+
+    def create_scrollable_tab(self, parent, chat_file):
+        self.clear_tab(parent)
+
+        scroll_area = QScrollArea(parent)
+        scroll_area.setWidgetResizable(True)
+        scroll_area.setStyleSheet("background-color: #1e1e1e;")
+        content_widget = QWidget()
+        scroll_area.setWidget(content_widget)
+        layout = QVBoxLayout(content_widget)
+
+        self.display_file_statistics(content_widget, chat_file)
+        self.display_hourly_statistics(content_widget, chat_file)
+        layout.addWidget(scroll_area)
+
+    def display_combined_statistics(self, tab):
+        self.clear_tab(tab)
+        layout = QVBoxLayout(tab)
+
+        label = QLabel("Combined Statistics")
+        label.setStyleSheet("color: white; font-size: 18px; padding: 20px;")
+        layout.addWidget(label)
+
+        fig = Figure(figsize=(6, 6))
+        ax = fig.add_subplot(111)
+        ax.set_facecolor("#1e1e1e")
+
+        canvas = FigureCanvas(fig)
+        layout.addWidget(canvas)
+
+    def display_file_statistics(self, tab, chat_file):
+        layout = QVBoxLayout(tab)
+        
+        for item in ["message", "word", "sticker", "audio", "video", "image", "edit", "link", "deleted"]:
+            frame = QFrame()
+            frame.setStyleSheet("background-color: #2b2b2b; color: #cccccc;")
+            frame_layout = QVBoxLayout(frame)
+            layout.addWidget(frame)
+
+            message_count_label = QLabel(f"{chat_file.name} - {item.capitalize()} Statistics")
+            message_count_label.setStyleSheet("color: white;")
+            frame_layout.addWidget(message_count_label)
+
+            fig = Figure(figsize=(4, 4))
+            ax = fig.add_subplot(111)
+            ax.set_facecolor("#1e1e1e")
+            canvas = FigureCanvas(fig)
+            frame_layout.addWidget(canvas)
 
     def combining_two_files(self, chat_fileAname, chat_fileBname):
-        
+        for chat_file in self.chat_files:
+            if chat_file.name == chat_fileAname:
+                chatfileA = chat_file
+                for chat_fileB in self.chat_files:
+                    if chat_fileB.name == chat_fileBname:
+                        chatfileA.chat_lines.extend(chat_fileB.chat_lines)
+                        self.chat_files.remove(chat_fileB)
 
-            for chat_file in self.chat_files:
-                if chat_file.name ==chat_fileAname:
-                    chatfileA= chat_file
-                    for chat_fileB in self.chat_files:
-                        if chat_fileB.name ==chat_fileBname:
-                            chatfileA.chat_lines.extend ( chat_fileB.chat_lines)
-                            self.chat_files.remove(chat_fileB)
+    def display_hourly_statistics(self, parent, chat_file):
+        hourly_stats_frame = QFrame(parent)
+        hourly_stats_frame.setStyleSheet("background-color: #1e1e1e; color: #cccccc;")
+        layout = QVBoxLayout(hourly_stats_frame)
+
+        participant_selector = QComboBox()
+        participant_selector.addItems([p.name for p in chat_file.participant_objects])
+        layout.addWidget(participant_selector)
+
+        year_selector = QComboBox()
+        year_selector.addItems([str(year) for year in range(2020, 2024)])
+        layout.addWidget(year_selector)
+
+        month_selector = QComboBox()
+        month_selector.addItems([str(month) for month in range(1, 13)])
+        layout.addWidget(month_selector)
+
+        day_slider = QSlider(Qt.Orientation.Horizontal)
+        day_slider.setRange(1, 31)
+        day_slider.setStyleSheet("QSlider::handle { background-color: #444444; }")
+        layout.addWidget(day_slider)
+
+        fig = Figure(figsize=(6, 4))
+        ax = fig.add_subplot(111)
+        ax.set_facecolor("#1e1e1e")
+        self.canvas = FigureCanvas(fig)
+        layout.addWidget(self.canvas)
+
 
 if __name__ == "__main__":
         app = QApplication(sys.argv)
-        chat_files = []  # Replace with actual Chatfile objects
+        chat_files = object_Chatfile_list
         window = ChatAnalysisGUI(chat_files)
         window.show()
         sys.exit(app.exec())

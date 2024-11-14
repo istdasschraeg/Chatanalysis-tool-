@@ -1,17 +1,44 @@
-import re
+#Hopefully Better UI 
 
+import re
+from datetime import date
+import tkinter as tk
+from tkinter import ttk
+import matplotlib.pyplot as plt
+from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
+from nltk.sentiment.vader import SentimentIntensityAnalyzer
+import nltk
+import sys
+from PyQt6.QtWidgets import (
+    QApplication, QMainWindow, QWidget, QVBoxLayout, QTabWidget, QComboBox, QLabel,
+    QScrollArea, QGraphicsView,  QFrame, QHBoxLayout,  QFileDialog ,QPushButton, QListWidget
+)
+from PyQt6.QtCore import Qt
+from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
+from matplotlib.figure import Figure
+from functools import partial
+from PyQt6.QtCharts import QChart, QChartView, QPieSeries
+from PyQt6.QtGui import QPainter
+#QGraphicsScen
+
+nltk.download('vader_lexicon')
+
+# Initialize the Sentiment Intensity Analyzer
+sid = SentimentIntensityAnalyzer()
 # Global variables
 timestamp_pattern = r"\[\d{2}\.\d{2}\.\d{2}, \d{2}:\d{2}:\d{2}\]"
 enable_interface = False
-file_name = "DummeLeuteDieSchachSpielen.txt"
-excluded_names = ["\u200eYou", "DummeLeuteDieSchachSpiele","Ur Mum", "Maxim Helmer","Gott Der Fucking Welt"]
-user_name="Maxim"
-file_list=["DummeLeuteDieSchachSpielen.txt"]
+excluded_names = ["\u200eYou", "DummeLeuteDieSchachSpiele","Gossip Girls", "Gott Der Fucking Welt"]
+file_list=["DummeLeuteDieSchachSpielen.txt","Nyla.txt","Moritz.txt","Gossip.txt","Ada.txt","Ada2.txt","Carl Erhardt.txt","Caro.txt","Chat 2024.txt","Christina.txt","Christina2.txt",
+           "Cosima.txt","Daniela.txt","Daniela2.txt", "Elise HeHe.txt", "Emilia.txt","Emma.txt", "Enz.txt","Fahrradtour.txt","Fiona.txt","Herren.txt","Jule.txt","Juliane.txt",
+           "Julius.txt","Liam.txt","Lukas.txt","Mama.txt","Manu.txt","Marcus.txt","Mihn.txt","Mitchel.txt","Q3-Q4.txt","Renate.txt","Sergio.txt","Tay.txt"]
 object_Chatfile_list =[]
 
 if enable_interface:
     print("What file should be opend")
-    file_list.apppend(input())
+    file_list.append(input())
+
+
 
 
  
@@ -30,6 +57,7 @@ class Chatfile:
         self.total_words=0
         self.total_message_count=0
         self.total_textmessages=0
+        self.total_messages=0
         self.total_stickers=0
         self.total_images=0
         self.total_audios=0
@@ -42,6 +70,13 @@ class Chatfile:
         self.total_links=0
         self.time_str =""
         self.date_str = ""
+
+        self.count_messages_per_timeframe={}
+        self.text_messages_per_timeframe={}
+        self.count_messages_per_timeframe_daily={}
+        self.text_messages_per_timeframe_daily={}
+        self.count_messages_per_timeframe_monthly={}
+        self.text_messages_per_timeframe_monthly={}
 
         self.load_file()
         self.clean_up_file()
@@ -63,7 +98,7 @@ class Chatfile:
             # Iterate through lines to merge any without a timestamp to the previous line
             while t < len(self.chat_lines) - 1:
                 self.chat_lines[t] = self.chat_lines[t].strip()  # Remove extra whitespace
-                self.chat_lines[t] = self.chat_lines[t].replace("Ã¼", "ue").replace("â€Ž", "")  # Clean encoding artifacts
+                self.chat_lines[t] = self.chat_lines[t].replace("Ã¼", "ue").replace("â€Ž", "").replace("ä","ae")  # Clean encoding artifacts
     
                 # If the next line lacks a timestamp or  contains "omitted," merge it with the current line
                 if not re.match(timestamp_pattern, self.chat_lines[t + 1]) and not "omitted" in self.chat_lines[t + 1]:
@@ -85,7 +120,18 @@ class Chatfile:
                     
                     # Add the name to participant_names if it's new
                     if name not in self.participant_names and name not in excluded_names:
-                        self.participant_names.append(name)
+
+                        if colon_position > 20:
+                            t=0
+                            while t < len(self.chat_lines) - 1:
+                                self.chat_lines[t] = self.chat_lines[t].replace(name,line[21:40])
+                                t+=1 
+                            self.participant_names.append(line[21:40])
+
+                        else:
+                            self.participant_names.append(name)
+
+
 
             if enable_interface:
                 if participant_names.count()>2:
@@ -119,6 +165,7 @@ class Chatfile:
                 self.participant_objects.append(Person(participant_name, gender))
 
     def measure_time(self):
+
             for participant in self.participant_names:
                 person_index = 0
                 for line in self.chat_lines:
@@ -133,25 +180,29 @@ class Chatfile:
                             
                             # Extract and store individual time components
                             hour = int(line[11:13])
-                            self.participant_objects[person_index].hours.append(hour)
-                            
                             minute = int(line[14:16])
-                            self.participant_objects[person_index].minutes.append(minute)
-
                             second = int(line[17:19])
-                            self.participant_objects[person_index].seconds.append(second)
-
                             day = int(line[1:3])
-                            self.participant_objects[person_index].days.append(day)
-
                             month = int(line[4:6])
-                            self.participant_objects[person_index].months.append(month)
-
                             year = int(line[7:9])
-                            self.participant_objects[person_index].years.append(year)
+
+                            #add to the dictionary
+                            self.count_messages_per_timeframe[participant][year][month][day][hour] += 1
+                            self.text_messages_per_timeframe[participant][year][month][day][hour] +=line 
+                            self.text_messages_per_timeframe_daily[participant][year][month][day] +=line 
+                            self.count_messages_per_timeframe_daily[participant][year][month][day]+=1
+                            self.text_messages_per_timeframe_monthly[participant][year][month]+=line 
+                            self.count_messages_per_timeframe_monthly[participant][year][month]+=1
 
                     person_index += 1
                     line = line.replace("(Person)", participant)
+
+    def analyze_mood_vader(text):
+        scores = sid.polarity_scores(text)
+        compound_score = scores['compound']
+        
+        return scores   
+
     def ANALyse_messages(self):
             # Collect message content for each participant
             message_count_total = 0
@@ -163,38 +214,27 @@ class Chatfile:
                         self.participant_objects[person_index].message_count += 1
                         message_count_total += 1
                         if line.count("image omitted")==1:
-                            self.participant_objects[person_index].image_count+=1 
-                            
+                            self.participant_objects[person_index].image_count+=1                        
                         elif line.count("document omitted")==1:  
-                            self.participant_objects[person_index].file_count+=1 
-                            
+                            self.participant_objects[person_index].file_count+=1                          
                         elif line.count("audio omitted")==1:  
-                            self.participant_objects[person_index].audio_count+=1 
-                            
+                            self.participant_objects[person_index].audio_count+=1                           
                         elif line.count("video omitted")==1:  
-                            self.participant_objects[person_index].video_count+=1 
-                            
+                            self.participant_objects[person_index].video_count+=1                             
                         elif line.count("sticker omitted")==1:  
-                            self.participant_objects[person_index].sticker_count+=1
-                            
+                            self.participant_objects[person_index].sticker_count+=1                           
                         elif line.count("This message was deleted")==1:
-                            self.participant_objects[person_index].deleted_count+=1
-                            
+                            self.participant_objects[person_index].deleted_count+=1                           
                         elif line.count("ideo call")==1:
-                            self.participant_objects[person_index].video_call_count+=1
-                            
+                            self.participant_objects[person_index].video_call_count+=1                           
                         elif line.count("oice call")==1:
-                            self.participant_objects[person_index].voice_call_count+=1
-                            
+                            self.participant_objects[person_index].voice_call_count+=1    
                         else:
                             message_start = line.find(participant) + len(participant)
                             self.participant_objects[person_index].messages.append(line[message_start:])
-                            self.participant_objects[person_index].text_message_count += 1
-                            
-
+                            self.participant_objects[person_index].text_message_count += 1  
                         if line.count ("<This message was edited>")==1:
-                            self.participant_objects[person_index].edit_count+=1 
-                        
+                            self.participant_objects[person_index].edit_count+=1                       
                         if line.count ("http")>=1:
                             self.participant_objects[person_index].link_count+=1 
 
@@ -203,7 +243,6 @@ class Chatfile:
             self.new_total_text_content= ""
             for person in self.participant_objects:
                 self.new_total_text_content+= " ".join(person.messages)  
-
 
                 self.total_files = sum(person.file_count for person in self.participant_objects)
                 self.total_stickers = sum(person.sticker_count for person in self.participant_objects)
@@ -219,64 +258,18 @@ class Chatfile:
                 self.total_message_count += person.message_count
                 self.total_textmessages += person.text_message_count
 
-            for person in self.participant_objects:
-                person.calculate_message_percentage(self.total_message_count)
-                person.calculate_text_message_percentage(self.total_textmessages)
-                person.calculate_word_percentage(self.total_words)
-                person.calculate_file_percentage(self.total_files)
-                person.calculate_sticker_percentage(self.total_stickers)
-                person.calculate_audio_percentage(self.total_audios)
-                person.calculate_video_percentage(self.total_videos)
-                person.calculate_image_percentage(self.total_images)
-                person.calculate_edit_percentage(self.total_edits)
-                person.calculate_deleted_percentage(self.total_deleted)
-                person.calculate_video_call_percentage(self.total_video_calls)
-                person.calculate_voice_call_percentage(self.total_voice_calls)
-                person.calculate_links_percentage(self.total_links)
-                
-
     def output_file_analyses(self):
             # Final calculations for message and word percentages
             for person in self.participant_objects:
-                
-                
                 # Combine all messages as a single text block and calculate word count
                 person.text_content = " ".join(person.messages)
-                person.word_count = len(person.text_content.split())
-                
-                # Calculate percentages of total messages and words
-                person.message_percentage = person.message_count / self.total_message_count
-                person.word_percentage = person.word_count / len(self.new_total_text_content.split()) #
-                person.calculate_words_per_message()
-                
-                # Print statistics for each participant
-                print(f"{person.name} has sent {person.message_count} messages, accounting for {round(person.message_percentage * 100,2)}% of all messages.")
-                print(f"{person.name} has sent {person.text_message_count} textmessages, accounting for {round(person.text_message_percentage * 100,2)}% of all textmessages.")
-                print(f"{person.name} has written {person.word_count} words, accounting for {round(person.word_percentage * 100,2)}% of all words.")
-                print(f"{person.name} has sent {person.file_count} files, accounting for {round(person.file_percentage * 100,2)}% of all files.")
-                print(f"{person.name} has sent {person.link_count} links, accounting for {round(person.link_percentage * 100,2)}% of all links.")
-                print(f"{person.name} has sent {person.sticker_count} stickers, accounting for {round(person.sticker_percentage * 100,2)}% of all stickers.")
-                print(f"{person.name} has sent {person.audio_count} audios, accounting for {round(person.audio_percentage * 100,2)}% of all audios.")
-                print(f"{person.name} has sent {person.video_count} videos, accounting for {round(person.video_percentage * 100,2)}% of all videos.")
-                print(f"{person.name} has sent {person.image_count} images, accounting for {round(person.image_percentage * 100,2)}% of all images.")
-                print(f"{person.name} has edited {person.edit_count} messages, accounting for {round(person.edit_percentage * 100,2)}% of all edits.")
-                print(f"{person.name} has deleted {person.deleted_count} messages, accounting for {round(person.deleted_percentage * 100,2)}% of all deleted messages.")
-                print(f"{person.name} has made {person.video_call_count} video calls, accounting for {round(person.video_call_percentage * 100,2)}% of all video calls.")
-                print(f"{person.name} has made {person.voice_call_count} voice calls, accounting for {round(person.voice_call_percentage * 100,2)}% of all voice calls.")
-                print(f"{person.name} writes an aveage of {round(person.words_per_message,2)} words per message")
-
-
-    #Work:
-    
-
-# Define a class to represent each chat participant
+                person.word_count = len(person.text_content.split())              
 class Person:
     def __init__(self, name, gender):
         """Initialize a Person with their name, gender, and message statistics."""
         self.name = name
         self.gender = gender
 
-        # Lists to store timestamps and other message-related information
         self.hours = []
         self.minutes = []
         self.seconds = []
@@ -318,72 +311,338 @@ class Person:
         self.words_per_message=0
 
     def pretty_print_name(self):
-        """Prints the name of the Person."""
         print(f"This Person's name is {self.name}.")
-
-    def calculate_message_percentage(self, message_count_total):
-        """Calculates and updates the percentage of total messages sent by this person."""
-        self.message_percentage = self.message_count / message_count_total if message_count_total > 0 else 0
-
-    def calculate_text_message_percentage(self, text_message_count_total):
-        """Calculates and updates the percentage of total messages sent by this person."""
-        self.text_message_percentage = self.text_message_count / text_message_count_total if text_message_count_total > 0 else 0
-
-    def calculate_word_percentage(self, total_words):
-        """Calculates and updates the percentage of total words written by this person."""
-        self.word_percentage = self.word_count / total_words if total_words > 0 else 0
-
-    def calculate_file_percentage(self, total_files):
-        """Calculates and updates the percentage of total files sent by this person."""
-        self.file_percentage = self.file_count / total_files if total_files > 0 else 0
-
-    def calculate_sticker_percentage(self, total_stickers):
-        """Calculates and updates the percentage of total stickers sent by this person."""
-        self.sticker_percentage = self.sticker_count / total_stickers if total_stickers > 0 else 0
-
-    def calculate_audio_percentage(self, total_audios):
-        """Calculates and updates the percentage of total audios sent by this person."""
-        self.audio_percentage = self.audio_count / total_audios if total_audios > 0 else 0
-
-    def calculate_video_percentage(self, total_videos):
-        """Calculates and updates the percentage of total videos sent by this person."""
-        self.video_percentage = self.video_count / total_videos if total_videos > 0 else 0
-
-    def calculate_image_percentage(self, total_images):
-        """Calculates and updates the percentage of total images sent by this person."""
-        self.image_percentage = self.image_count / total_images if total_images > 0 else 0
-
-    def calculate_edit_percentage(self, total_edits):
-        """Calculates and updates the percentage of total edits by this person."""
-        self.edit_percentage = self.edit_count / total_edits if total_edits > 0 else 0
-
-    def calculate_deleted_percentage(self, total_deleted):
-        """Calculates and updates the percentage of total deleted messages by this person."""
-        self.deleted_percentage = self.deleted_count / total_deleted if total_deleted > 0 else 0
-
-    def calculate_video_call_percentage(self, total_video_calls):
-        """Calculates and updates the percentage of total video calls by this person."""
-        self.video_call_percentage = self.video_call_count / total_video_calls if total_video_calls > 0 else 0
-
-    def calculate_voice_call_percentage(self, total_voice_calls):
-        """Calculates and updates the percentage of total voice calls by this person."""
-        self.voice_call_percentage = self.voice_call_count / total_voice_calls if total_voice_calls > 0 else 0
-
-    def calculate_links_percentage(self, total_links):
-        """Calculates and updates the percentage of total voice calls by this person."""
-        self.link_percentage = self.link_count / total_links if total_links > 0 else 0
-    
-    def calculate_words_per_message(self):
-         self.words_per_message= self.word_count/self.message_count if self.message_count > 0 else 0
-
-
-# Final output of total message and word statistic
-#print("Total message count:", message_count_total)
-#print("Total word count:", len(new_total_text_content.split()))
-#print("Average words per message:", len(new_total_text_content.split()) / message_count_total)
-
 
 for file in file_list:
     object_Chatfile_list.append(Chatfile(file))
+
+class FileStatisticsGUI(QWidget):
+    def __init__(self, object_Chatfile_list):
+        super().__init__()
+        self.username=""
+        self.minimalpercentage=1
+        self.chat_files = object_Chatfile_list
+
+        self.setWindowTitle("Whatsapp Analyser")
+
+        self.find_username()
+
+        self.init_ui()       
+        
+    def init_ui(self):
+        self.setGeometry(100, 100, 1200, 900)
+        
+        # Main layout for the window
+        main_layout = QHBoxLayout(self)
+        
+        # Sidebar for display mode selection
+        sidebar_layout = QVBoxLayout()
+        self.display_mode_list = QListWidget()
+        self.display_mode_list.addItems(["Pie charts", "Numbers", "Over time"])
+
+        self.display_mode_list.currentItemChanged.connect(self.change_display_mode)
+        sidebar_layout.addWidget(self.display_mode_list)
+        
+        # Main content layout (for current tab widget)
+        content_layout = QVBoxLayout()
+        self.tab_widget = QTabWidget()
+        content_layout.addWidget(self.tab_widget)
+
+        self.setup_tabs("Pie charts")
+        
+        # Add sidebar and content layout to the main layout
+        main_layout.addLayout(sidebar_layout, 1)  # Sidebar with width ratio
+        main_layout.addLayout(content_layout, 4)   # Content with width ratio
+
+        self.setLayout(main_layout)
+
+    def setup_tabs(self, mode):
+        # Clear existing tabs before setting up new ones
+        self.tab_widget.clear()
+        
+        if mode =="Pie charts":
+        # Combined statistics tab setup
+            combined_scroll_area = QScrollArea()
+            combined_scroll_area.setWidgetResizable(True)
+            
+            combined_content = QWidget()
+            combined_layout = QVBoxLayout(combined_content)
+            
+            # Combo box and label for combined statistics display
+            combined_combo_box = QComboBox()
+            combined_combo_box.addItems(["message", "word", "sticker", "audio", "video", "image", "edit", "link", "deleted"])
+            combined_label = QLabel("Selected option will appear here")
+            
+            combined_layout.addWidget(combined_combo_box)
+            combined_layout.addWidget(combined_label)
+            
+            # Placeholder layout for charts or numbers in combined statistics
+            combined_chart_layout = QVBoxLayout()
+            combined_layout.addLayout(combined_chart_layout)
+            
+            # Add combined content to the scroll area and tab widget
+            combined_scroll_area.setWidget(combined_content)
+            self.tab_widget.addTab(combined_scroll_area, "Combined Statistics")
+
+            # Connect the combo box for "Combined Statistics" tab
+            combined_combo_box.currentTextChanged.connect(
+                    lambda text: self.show_combined_stats(text, combined_label, combined_chart_layout))
+            
+        if mode =="Numbers":
+
+            #add combo box for ranking
+
+            file_scroll_area = QScrollArea()
+            file_scroll_area.setWidgetResizable(True)
+            file_label = QLabel("")
+                
+            file_content = QWidget()
+            file_layout = QVBoxLayout(file_content)                    
+            file_layout.addWidget(file_label)
+            file_layout = QVBoxLayout()
+                    
+            file_scroll_area.setWidget(file_content)
+            self.tab_widget.addTab(file_scroll_area, f"Combined Statistics")     
+
+            text_data = ""
+            items = ["message", "word", "sticker", "audio", "video", "image", "edit", "link", "deleted", "video_call", "voice_call"]
+            list_names = []
+            dict_counts = {} 
+
+            for chat_file in self.chat_files:
+                for person in chat_file.participant_objects:
+                    name_double = False
+                    
+                    for i in list_names:
+                        if i == person.name:
+                            
+                            for item in items:
+                                count = getattr(person, f"{item}_count", 0)
+                                dict_counts[person.name + "_" + item] = dict_counts.get(person.name + "_" + item, 0) + count
+                            name_double = True
+                            break
+                    
+                    if not name_double and person.message_count> 50:
+                        for item in items:
+                            count = getattr(person, f"{item}_count", 0)
+                            dict_counts[person.name + "_" + item] = count
+                        list_names.append(person.name)
+
+            
+            for name in list_names:
+                text_data += f"{name.capitalize()}:\n\n"
+                for item in items:
+                    count = dict_counts.get(name + "_" + item, 0)
+                    text_data += f"{item.capitalize()} messages: {count}\n"
+                
+                word_count = dict_counts.get(name + "_word", 0)
+                message_count = dict_counts.get(name + "_message", 0)
+                if message_count > 0:
+                    words_per_message = round(word_count / message_count, 4)
+                    text_data += f"Words per Message: {words_per_message}\n"
+                
+                text_data += "-" * 150 + "\n\n"  
+
+            file_label.setText(text_data)
+
+            
+        if mode == "Pie charts":
+            for file in self.chat_files:
+                # Create a scrollable area for each file tab
+                scroll_area = QScrollArea()
+                scroll_area.setWidgetResizable(True)
+                
+                # Create a container widget for each file tab's content
+                file_tab_content = QWidget()
+                file_tab_layout = QVBoxLayout(file_tab_content)
+                
+                combo_box = QComboBox()
+                combo_box.addItems(["message", "word", "sticker", "audio", "video", "image", "edit", "link", "deleted", "video_call", "voice_call"])
+                label = QLabel("Selected option will appear here")
+                
+                file_tab_layout.addWidget(combo_box)
+                file_tab_layout.addWidget(label)
+                
+                chart_layout = QVBoxLayout()
+                file_tab_layout.addLayout(chart_layout)
+                
+                combo_box.currentTextChanged.connect(lambda text, file=file, label=label, chart_layout=chart_layout: 
+                                                    self.display_file_statistics(text, file, label, chart_layout))
+                
+                # Set the file_tab_content as the widget of the scroll area
+                scroll_area.setWidget(file_tab_content)
+
+                self.tab_widget.addTab(scroll_area, f"Statistics for {file.name}")
+        if mode == "Numbers":
+                
+                for chat_file in self.chat_files:
+                    file_scroll_area = QScrollArea()
+                    file_scroll_area.setWidgetResizable(True)
+
+                    file_label = QLabel("")
+                    
+                    file_content = QWidget()
+                    file_layout = QVBoxLayout(file_content)
+                    file_layout.addWidget(file_label)
+                    
+                    file_layout = QVBoxLayout()
+                    
+                    file_scroll_area.setWidget(file_content)
+                    self.tab_widget.addTab(file_scroll_area, f"Statistics for {chat_file.name}")     
+
+                    file_label.setText(self.display_file_numbers(chat_file)   ) 
+         
+    def change_display_mode(self, item):
+        if item:
+            mode = item.text()  
+            self.setup_tabs(mode)
+
+    def display_file_numbers(self,chat_file):
+       
+        text_data = ""
+        items = ["message", "word", "sticker", "audio", "video", "image", "edit", "link", "deleted", "video_call", "voice_call"]
+        
+        for person in chat_file.participant_objects:
+            text_data+=f"{person.name.capitalize()}: \n\n"
+            for item in items: 
+                count = getattr(person, f"{item}_count", 0)
+                text_data += f"{item.capitalize()} messages: {count} \n"
+            text_data+= f"Words per Message: {round(person.word_count/person.message_count, 4)}\n"
+
+            text_data += "-" * 200 + "\n\n"
+
+          
+        
+        return text_data
+
+    def display_file_statistics(self, text, chat_file, label, chart_layout):
+        # Update the label with the selected option
+        label.setText(f"Statistics for {text}")
+        
+        for i in reversed(range(chart_layout.count())):
+            widget_to_remove = chart_layout.itemAt(i).widget()
+            if widget_to_remove is not None:
+                widget_to_remove.deleteLater()
+                chart_layout.removeWidget(widget_to_remove)
+
+        # Calculate the total count for the selected statistic
+        total_count = sum(int(getattr(person, f"{text}_count", 0) or 0) for person in chat_file.participant_objects)
+        if total_count == 0:
+            print(f"No data to display for {text}.")
+            return  # No data to show for this option
+
+        # Create a new pie chart per item
+        series = QPieSeries()
+        for person in chat_file.participant_objects:
+            count = int(getattr(person, f"{text}_count", 0) or 0)
+            percentage = (count / total_count) * 100  # Calculate percentage
+            if count > 0 and percentage > (10 / len(chat_file.participant_objects)):
+                # Append data with formatted label showing absolute value and percentage
+                slice = series.append(f"{person.name}: {count} ({percentage:.1f}%)", count)
+                slice.setLabelVisible(True)
+                print(f"Adding slice for {person.name}: {count} ({percentage:.1f}%)")
+
+        # Create a chart for the series
+        chart = QChart()
+        chart.addSeries(series)
+        chart.setTitle(f"{text.capitalize()} Statistics")
+
+        # Create a QChartView to display the chart
+        chart_view = QChartView(chart)
+        chart_view.setRenderHint(QPainter.RenderHint.Antialiasing)
+
+        # Add the chart view to the chart layout
+        chart_layout.addWidget(chart_view)
+        print("Chart added to layout")
+        self.tab_widget.update()
+
+    def combining_two_files(self, chat_fileAname, chat_fileBname):
+        for chat_file in self.chat_files:
+            if chat_file.name ==chat_fileAname:
+                chatfileA= chat_file
+                for chat_fileB in self.chat_files:
+                    if chat_fileB.name ==chat_fileBname:
+                        chatfileA.chat_lines.extend ( chat_fileB.chat_lines)
+                        self.chat_files.remove(chat_fileB)
+
+    def show_combined_stats(self,text, label, chart_layout):
+        # Update the label with the selected option
+        label.setText(f"Combined statistics for {text}")
+
+        # Clear the old chart views from the layout
+        for i in reversed(range(chart_layout.count())):
+            widget_to_remove = chart_layout.itemAt(i).widget()
+            if widget_to_remove is not None:
+                widget_to_remove.deleteLater()
+                chart_layout.removeWidget(widget_to_remove)
+
+        # Calculate the total count for the selected statistic
+        total_count=0
+        for file in self.chat_files:
+            for person in file.participant_objects:
+                if not person.name== self.username:
+                    total_count += int(getattr(person, f"{text}_count", 0) or 0) 
+        if total_count == 0:
+            return  # No data to show for this option
+
+        # Create a new pie chart per item
+        series = QPieSeries()
+        for file in self.chat_files:
+            for person in file.participant_objects:
+                if not person.name == self.username and len(file.participant_objects)==2:
+                    count = int(getattr(person, f"{text}_count", 0) or 0)
+                    
+                    percentage = (count / total_count) * 100    # Calculate percentage           
+                    if count > 0  :  
+                        if  percentage > (self.minimalpercentage):
+                            # Append data with formatted label showing absolute value and percentage
+                            slice = series.append(f"{person.name}: {count} ({percentage:.1f}%)", count)
+                            slice.setLabelVisible(True)
+
+        # Create a chart for the series
+        chart = QChart()
+        chart.addSeries(series)
+        chart.setTitle(f"{text.capitalize()} Statistics")
+
+        # Create a QChartView to display the chart
+        chart_view = QChartView(chart)
+        chart_view.setRenderHint(QPainter.RenderHint.Antialiasing)
+
+        # Add the chart view to the chart layout
+        chart_layout.addWidget(chart_view)
+
+    def find_username(self):
+        """Determine the most active username from chat data."""
+        list_names = {}
+        list_of_done = []
+        name_double = False
+
+        for file in self.chat_files:
+            for person in file.participant_objects:
+                for i in list_of_done:
+                    if i == person.name:
+                        list_names[person.name] += 1
+                        name_double = True
+                        
+                        
+
+                if not name_double:
+                    list_names[person.name] = 1
+                    list_of_done.append(person.name)
+                    
+                else:
+                    name_double=False
+
+        self.username = max(list_names, key=list_names.get)
+        print("Username detected:", self.username)
+
+    
+        
+
+# Main application launch
+app = QApplication(sys.argv)
+window = FileStatisticsGUI(object_Chatfile_list)
+window.show()
+sys.exit(app.exec())
 
 
