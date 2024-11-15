@@ -2,8 +2,6 @@
 
 import re
 from datetime import date
-import tkinter as tk
-from tkinter import ttk
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 from nltk.sentiment.vader import SentimentIntensityAnalyzer
@@ -25,6 +23,7 @@ nltk.download('vader_lexicon')
 
 # Initialize the Sentiment Intensity Analyzer
 sid = SentimentIntensityAnalyzer()
+
 # Global variables
 timestamp_pattern = r"\[\d{2}\.\d{2}\.\d{2}, \d{2}:\d{2}:\d{2}\]"
 enable_interface = False
@@ -316,17 +315,21 @@ class Person:
 for file in file_list:
     object_Chatfile_list.append(Chatfile(file))
 
+from PyQt6.QtCharts import QChart, QChartView, QBarSeries, QBarSet, QBarCategoryAxis
+from PyQt6.QtWidgets import QApplication, QWidget, QVBoxLayout, QPushButton, QComboBox, QHBoxLayout
+from PyQt6.QtGui import QPainter
+from PyQt6.QtCore import Qt
+
 class FileStatisticsGUI(QWidget):
     def __init__(self, object_Chatfile_list):
         super().__init__()
         self.username=""
         self.minimalpercentage=1
         self.chat_files = object_Chatfile_list
-
+        self.current_timeframe = 'Day'
+        self.time_index = 0
         self.setWindowTitle("Whatsapp Analyser")
-
         self.find_username()
-
         self.init_ui()       
         
     def init_ui(self):
@@ -428,7 +431,6 @@ class FileStatisticsGUI(QWidget):
                             dict_counts[person.name + "_" + item] = count
                         list_names.append(person.name)
 
-            
             for name in list_names:
                 text_data += f"{name.capitalize()}:\n\n"
                 for item in items:
@@ -473,24 +475,104 @@ class FileStatisticsGUI(QWidget):
                 scroll_area.setWidget(file_tab_content)
 
                 self.tab_widget.addTab(scroll_area, f"Statistics for {file.name}")
-        if mode == "Numbers":
+        if mode == "Numbers":   
+            for chat_file in self.chat_files:
+                file_scroll_area = QScrollArea()
+                file_scroll_area.setWidgetResizable(True)
+                file_label = QLabel("")
+                    
+                file_content = QWidget()
+                file_layout = QVBoxLayout(file_content)
+                file_layout.addWidget(file_label)
                 
-                for chat_file in self.chat_files:
-                    file_scroll_area = QScrollArea()
-                    file_scroll_area.setWidgetResizable(True)
+                file_layout = QVBoxLayout()
+                        
+                file_scroll_area.setWidget(file_content)
+                self.tab_widget.addTab(file_scroll_area, f"Statistics for {chat_file.name}")     
 
-                    file_label = QLabel("")
-                    
-                    file_content = QWidget()
-                    file_layout = QVBoxLayout(file_content)
-                    file_layout.addWidget(file_label)
-                    
-                    file_layout = QVBoxLayout()
-                    
-                    file_scroll_area.setWidget(file_content)
-                    self.tab_widget.addTab(file_scroll_area, f"Statistics for {chat_file.name}")     
+                file_label.setText(self.display_file_numbers(chat_file)   ) 
+            
+        if mode == "Over time":
+            # Initialize variables needed across "Over time" methods
+            self.time_index = 0  # Keeps track of current timeframe position
+            self.chart_view = QChartView()
+            self.chart_view.setRenderHint(QPainter.RenderHint.Antialiasing)
+            
+            # Dropdown for timeframe selection
+            self.timeframe_selector = QComboBox()
+            self.timeframe_selector.addItems(["Day", "Week", "Month", "Year"])
+            self.timeframe_selector.currentTextChanged.connect(self.update_chart)
+            
+            # Navigation buttons
+            self.prev_button = QPushButton("←")
+            self.next_button = QPushButton("→")
+            self.prev_button.clicked.connect(self.move_back)
+            self.next_button.clicked.connect(self.move_forward)
+            
+            # Layout setup for navigation and chart display
+            layout = QVBoxLayout(self)
+            navigation_layout = QHBoxLayout()
+            navigation_layout.addWidget(self.prev_button)
+            navigation_layout.addWidget(self.timeframe_selector)
+            navigation_layout.addWidget(self.next_button)
+            
+            layout.addLayout(navigation_layout)
+            layout.addWidget(self.chart_view)
+            
+            # Initial chart setup
+            self.update_chart()
 
-                    file_label.setText(self.display_file_numbers(chat_file)   ) 
+    def update_chart(self):
+        # Clear the old chart and create a new one
+        chart = QChart()
+        self.current_timeframe = self.timeframe_selector.currentText()
+        
+        # Placeholder data based on selected timeframe
+        time_units = ["01", "02", "03", "04", "05", "06", "07"]  # Customize with real data
+        
+        series = QBarSeries()
+        data_set = QBarSet(self.current_timeframe)
+        
+        # Populate bars with example data; replace with real data
+        if self.current_timeframe == "Day":
+            data_set.append([5, 3, 8, 6, 7, 2, 1])
+        elif self.current_timeframe == "Week":
+            data_set.append([35, 40, 50, 20, 30, 25, 45])
+        elif self.current_timeframe == "Month":
+            data_set.append([100, 120, 80, 150, 90, 110, 130])
+        elif self.current_timeframe == "Year":
+            data_set.append([1200, 1350, 1300, 1400, 1250, 1280, 1380])
+        
+        series.append(data_set)
+        
+
+
+        chart.addSeries(series)
+        
+        # Create axis and categories
+        axis_x = QBarCategoryAxis()
+        axis_x.append(time_units)
+        chart.addAxis(axis_x, Qt.AlignmentFlag.AlignBottom)
+        series.attachAxis(axis_x)
+
+        chart.setTitle(f"Metrics over Time ({self.current_timeframe})")
+        self.chart_view.setChart(chart)
+
+    def move_forward(self):
+        # Shift timeframe forward and update chart
+        self.time_index += 1
+        self.update_chart()
+
+    def move_back(self):
+        # Shift timeframe backward and update chart
+        self.time_index = max(0, self.time_index - 1)
+        self.update_chart()       
+        
+        
+        
+
+    
+
          
     def change_display_mode(self, item):
         if item:
@@ -533,14 +615,20 @@ class FileStatisticsGUI(QWidget):
 
         # Create a new pie chart per item
         series = QPieSeries()
+        total=0
         for person in chat_file.participant_objects:
             count = int(getattr(person, f"{text}_count", 0) or 0)
+            print (count)
+            total +=count
+            print (total)
             percentage = (count / total_count) * 100  # Calculate percentage
             if count > 0 and percentage > (10 / len(chat_file.participant_objects)):
                 # Append data with formatted label showing absolute value and percentage
                 slice = series.append(f"{person.name}: {count} ({percentage:.1f}%)", count)
                 slice.setLabelVisible(True)
-                print(f"Adding slice for {person.name}: {count} ({percentage:.1f}%)")
+                
+                
+        label.setText(f"Statistics for {text}. Total {total}")
 
         # Create a chart for the series
         chart = QChart()
@@ -553,7 +641,6 @@ class FileStatisticsGUI(QWidget):
 
         # Add the chart view to the chart layout
         chart_layout.addWidget(chart_view)
-        print("Chart added to layout")
         self.tab_widget.update()
 
     def combining_two_files(self, chat_fileAname, chat_fileBname):
@@ -576,15 +663,19 @@ class FileStatisticsGUI(QWidget):
                 widget_to_remove.deleteLater()
                 chart_layout.removeWidget(widget_to_remove)
 
-        # Calculate the total count for the selected statistic
+        total_count_with=0
+        for file in self.chat_files:
+            for person in file.participant_objects:  
+                    total_count_with += int(getattr(person, f"{text}_count", 0) or 0) 
+
+        # Calculate the total count for the selected statistics
         total_count=0
         for file in self.chat_files:
             for person in file.participant_objects:
                 if not person.name== self.username:
                     total_count += int(getattr(person, f"{text}_count", 0) or 0) 
-        if total_count == 0:
-            return  # No data to show for this option
 
+        label.setText(f"Statistics for {text}. Total: {total_count}. Total including U: {total_count_with}")
         # Create a new pie chart per item
         series = QPieSeries()
         for file in self.chat_files:
