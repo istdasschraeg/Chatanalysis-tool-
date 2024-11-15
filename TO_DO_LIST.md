@@ -2,17 +2,17 @@
 
 # TO DO LIST:
 
-[ ] exclude names
+- [ ] exclude names
 
-[ ] Sentiment Analyses
-[ ] emotions detection?
-[ ] Time of Day patters
-[ ] Month Year inlfux of texts
-[ ] Message Batch recognition
-[ ] Instagramm extension
-[ ]  Responds time Analyses (with certain modifable thresholds)
+- [ ] Sentiment Analyses
+- [ ] emotions detection?
+- [ ] Time of Day patters
+- [ ] Month Year inlfux of texts
+- [ ] Message Batch recognition
+- [ ] Instagramm extension
+- [ ]  Responds time Analyses (with certain modifable thresholds)
 
-[ ] GUI with possiblity of 
+- [ ] GUI with possiblity of 
     identifying doubles in group chats
     insta whatsapp identification
 
