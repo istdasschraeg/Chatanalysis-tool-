@@ -2,7 +2,7 @@
 
 # TO DO LIST:
 
-- [ ] exclude names
+- [x] exclude names
 
 - [ ] Sentiment Analyses
 - [ ] emotions detection?
