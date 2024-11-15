@@ -2,28 +2,28 @@
 
 # TO DO LIST:
 
-    [ ] exclude names
-    
-    [ ] Sentiment Analyses
-    [ ] emotions detection?
-    [ ] Time of Day patters
-    [ ] Month Year inlfux of texts
-    [ ] Message Batch recognition
-    [ ] Instagramm extension
-    [ ]  Responds time Analyses (with certain modifable thresholds)
+[ ] exclude names
 
-    [ ] GUI with possiblity of 
-        identifying doubles in group chats
-        insta whatsapp identification
+[ ] Sentiment Analyses
+[ ] emotions detection?
+[ ] Time of Day patters
+[ ] Month Year inlfux of texts
+[ ] Message Batch recognition
+[ ] Instagramm extension
+[ ]  Responds time Analyses (with certain modifable thresholds)
 
-    Conversation starter (Useres that start a conversation)
-    Mentions 
-    Emojis?
-    Topic Analyser
-    personilsed language
-    Politness meter
+[ ] GUI with possiblity of 
+    identifying doubles in group chats
+    insta whatsapp identification
 
-    sort stats
+Conversation starter (Useres that start a conversation)
+Mentions 
+Emojis?
+Topic Analyser
+personilsed language
+Politness meter
+
+sort stats
     
     
 
