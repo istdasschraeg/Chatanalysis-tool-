@@ -149,7 +149,7 @@ class Chatfile:
                 gender = "other"  # Placeholder for user input
                 self.participant_objects.append(Person(participant_name, gender))
 
-    def measure_time(self):
+    def measure_time_per_person(self):
 
             for participant in self.participant_names:
                 person_index = 0
@@ -182,6 +182,27 @@ class Chatfile:
                     person_index += 1
                     line = line.replace("(Person)", participant)
 
+    def measure_time_per_person(self):
+
+                for line in self.chat_lines:    
+                            self.time_str = line[12:19]
+                            self.date_str = line[2:10] 
+                            # Extract and store individual time components
+                            hour = int(line[11:13])
+                            minute = int(line[14:16])
+                            second = int(line[17:19])
+                            day = int(line[1:3])
+                            month = int(line[4:6])
+                            year = int(line[7:9])
+
+                            #add to the dictionary
+                            self.count_messages_per_timeframe[year][month][day][hour] += 1
+                            self.text_messages_per_timeframe[year][month][day][hour] +=line 
+                            self.text_messages_per_timeframe_daily[year][month][day] +=line 
+                            self.count_messages_per_timeframe_daily[year][month][day]+=1
+                            self.text_messages_per_timeframe_monthly[year][month]+=line 
+                            self.count_messages_per_timeframe_monthly[year][month]+=1  
+                    
     def analyze_mood_vader(text):
         scores = sid.polarity_scores(text)
         compound_score = scores['compound']

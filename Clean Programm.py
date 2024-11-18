@@ -17,6 +17,8 @@ from matplotlib.figure import Figure
 from functools import partial
 from PyQt6.QtCharts import QChart, QChartView, QPieSeries
 from PyQt6.QtGui import QPainter
+from datetime import datetime, timedelta
+from calendar import monthrange
 #QGraphicsScen
 
 nltk.download('vader_lexicon')
@@ -81,7 +83,8 @@ class Chatfile:
         self.clean_up_file()
         self.extract_participant_names()
         self.create_person_objects()
-        self.measure_time()
+        #self.measure_time()
+        #self.measure_time_per_person
         self.ANALyse_messages()
         self.analyse_entiere_file()
         self.output_file_analyses()
@@ -97,7 +100,7 @@ class Chatfile:
             # Iterate through lines to merge any without a timestamp to the previous line
             while t < len(self.chat_lines) - 1:
                 self.chat_lines[t] = self.chat_lines[t].strip()  # Remove extra whitespace
-                self.chat_lines[t] = self.chat_lines[t].replace("Ã¼", "ue").replace("â€Ž", "").replace("ä","ae")  # Clean encoding artifacts
+                self.chat_lines[t] = self.chat_lines[t].replace("Ã¼", "ue").replace("â€Ž", "").replace("ä","ae").replace("U+200e","")  # Clean encoding artifacts
     
                 # If the next line lacks a timestamp or  contains "omitted," merge it with the current line
                 if not re.match(timestamp_pattern, self.chat_lines[t + 1]) and not "omitted" in self.chat_lines[t + 1]:
@@ -130,71 +133,66 @@ class Chatfile:
                         else:
                             self.participant_names.append(name)
 
-
-
-            if enable_interface:
-                if participant_names.count()>2:
-                    print(*participant_names)
-                    print("Which of these is the name of the groupchat?")
-                    excluded_names.append(input())
-                    print("Which of these is your name?")
-                    #user_name=input()
-
-                    number_of_replicates=0
-                    print("Is any of these names a replication of Another? y/n")
-                    if input()=="y":
-                        while number_of_replicates==0:
-                            print("Which one is the duplicate")
-                            to_be_replaced=input()
-                            print("Which one is the original")
-                            to_be_kept=input()
-                            t=0
-                            for line in self.chat_lines:
-                                self.chat_lines[t]=self.chat_lines[t].replace(to_be_replaced,to_be_kept)
-                                t+=1
-                            print("Are those all dublicates?")
-                            if input()=="y":
-                                number_of_replicates+=1
-
-
     def create_person_objects(self):
             for participant_name in self.participant_names:
                 #print("What gender is ",participant_name,"?(male, female, other)")
                 gender = "other"  # Placeholder for user input
                 self.participant_objects.append(Person(participant_name, gender))
 
-    def measure_time(self):
+    #def measure_time(self):
 
-            for participant in self.participant_names:
-                person_index = 0
-                for line in self.chat_lines:
+                #for line in self.chat_lines:
                     # Check for lines starting with "[" indicating a message
-                    if line.startswith("["):
-                        line = line.replace(participant, "(Person)").replace("Ã¼", "ue").replace("â€Ž", "")
-                        
-                        # Identify and extract message time details if participant name matches
-                        if line[21:29] == participant:
-                            self.time_str = line[12:19]
-                            self.date_str = line[2:10]
-                            
+                    #if line.startswith("["):
+                            #line = line.replace("Ã¼", "ue").replace("â€Ž", "")
+
+                            #self.time_str = line[12:19]
+                            #self.date_str = line[2:10]
+                             
                             # Extract and store individual time components
-                            hour = int(line[11:13])
-                            minute = int(line[14:16])
-                            second = int(line[17:19])
-                            day = int(line[1:3])
-                            month = int(line[4:6])
-                            year = int(line[7:9])
+                            #hour = int(line[11:13])
+                            #minute = int(line[14:16])
+                            #second = int(line[17:19])
+                            #day = int(line[1:3])
+                            #month = int(line[4:6])
+                            #year = int(line[7:9])
 
                             #add to the dictionary
-                            self.count_messages_per_timeframe[participant][year][month][day][hour] += 1
-                            self.text_messages_per_timeframe[participant][year][month][day][hour] +=line 
-                            self.text_messages_per_timeframe_daily[participant][year][month][day] +=line 
-                            self.count_messages_per_timeframe_daily[participant][year][month][day]+=1
-                            self.text_messages_per_timeframe_monthly[participant][year][month]+=line 
-                            self.count_messages_per_timeframe_monthly[participant][year][month]+=1
+                            #self.count_messages_per_timeframe[year][month][day][hour] += 1
+                            #self.text_messages_per_timeframe[year][month][day][hour] +=line 
+                            #self.text_messages_per_timeframe_daily[year][month][day] +=line 
+                            #self.count_messages_per_timeframe_daily[year][month][day]+=1
+                            #self.text_messages_per_timeframe_monthly[year][month]+=line 
+                            #self.count_messages_per_timeframe_monthly[year][month]+=1
 
-                    person_index += 1
-                    line = line.replace("(Person)", participant)
+                            
+    def measure_time_per_person(self):
+
+                for line in self.chat_lines:  
+                    for participant in self.participant_objects:
+                        if line.startswith("["):
+                            line = line.replace(participant.name, "(Person)").replace("Ã¼", "ue").replace("â€Ž", "")
+                            
+                            # Identify and extract message time details if participant name matches
+                            if line[21:29] == participant.name:
+                                
+                                    self.time_str = line[12:19]
+                                    self.date_str = line[2:10] 
+                                    # Extract and store individual time components
+                                    hour = int(line[11:13])
+                                    minute = int(line[14:16])
+                                    second = int(line[17:19])
+                                    day = int(line[1:3])
+                                    month = int(line[4:6])
+                                    year = int(line[7:9])
+
+                                    #add to the dictionary
+                                    self.count_messages_per_timeframe[year][month][day][hour] += 1
+                                    self.text_messages_per_timeframe[year][month][day][hour] +=line 
+                                    self.text_messages_per_timeframe_daily[year][month][day] +=line 
+                                    self.count_messages_per_timeframe_daily[year][month][day]+=1
+                                    self.text_messages_per_timeframe_monthly[year][month]+=line 
+                                    self.count_messages_per_timeframe_monthly[year][month]+=1  
 
     def analyze_mood_vader(text):
         scores = sid.polarity_scores(text)
@@ -315,7 +313,7 @@ class Person:
 for file in file_list:
     object_Chatfile_list.append(Chatfile(file))
 
-from PyQt6.QtCharts import QChart, QChartView, QBarSeries, QBarSet, QBarCategoryAxis
+from PyQt6.QtCharts import QChart, QChartView, QBarSeries, QBarSet, QBarCategoryAxis, QValueAxis
 from PyQt6.QtWidgets import QApplication, QWidget, QVBoxLayout, QPushButton, QComboBox, QHBoxLayout
 from PyQt6.QtGui import QPainter
 from PyQt6.QtCore import Qt
@@ -327,13 +325,27 @@ class FileStatisticsGUI(QWidget):
         self.minimalpercentage=1
         self.chat_files = object_Chatfile_list
         self.current_timeframe = 'Day'
-        self.time_index = 0
+        self.time_index = 1
+
+        self.timeframe_year=0
+        self.timeframe_month=0
+        self.timeframe_day=0
+        self.timeframe_hour=0
+
+        self.last_hour =0
+        self.last_minute = 0
+        self.last_second = 0
+        self.last_day = 0
+        self.last_month = 0
+        self.last_year =0
+        
         self.setWindowTitle("Whatsapp Analyser")
         self.find_username()
+        
         self.init_ui()       
         
     def init_ui(self):
-        self.setGeometry(100, 100, 1200, 900)
+        self.setGeometry(700, 100, 1200, 900)
         
         # Main layout for the window
         main_layout = QHBoxLayout(self)
@@ -493,87 +505,234 @@ class FileStatisticsGUI(QWidget):
                 file_label.setText(self.display_file_numbers(chat_file)   ) 
             
         if mode == "Over time":
-            # Initialize variables needed across "Over time" methods
-            self.time_index = 0  # Keeps track of current timeframe position
-            self.chart_view = QChartView()
-            self.chart_view.setRenderHint(QPainter.RenderHint.Antialiasing)
-            
-            # Dropdown for timeframe selection
-            self.timeframe_selector = QComboBox()
-            self.timeframe_selector.addItems(["Day", "Week", "Month", "Year"])
-            self.timeframe_selector.currentTextChanged.connect(self.update_chart)
-            
-            # Navigation buttons
-            self.prev_button = QPushButton("←")
-            self.next_button = QPushButton("→")
-            self.prev_button.clicked.connect(self.move_back)
-            self.next_button.clicked.connect(self.move_forward)
-            
-            # Layout setup for navigation and chart display
-            layout = QVBoxLayout(self)
-            navigation_layout = QHBoxLayout()
-            navigation_layout.addWidget(self.prev_button)
-            navigation_layout.addWidget(self.timeframe_selector)
-            navigation_layout.addWidget(self.next_button)
-            
-            layout.addLayout(navigation_layout)
-            layout.addWidget(self.chart_view)
-            
-            # Initial chart setup
-            self.update_chart()
+            for file in self.chat_files:
+                self.find_last_message(file)
+                self.find_last_message
+                # Create a tab for each file
+                scroll_area = QScrollArea()
+                scroll_area.setWidgetResizable(True)
 
-    def update_chart(self):
-        # Clear the old chart and create a new one
+                file_tab_content = QWidget()
+                file_tab_layout = QVBoxLayout(file_tab_content)
+
+                # Navigation Buttons
+                nav_layout = QHBoxLayout()
+                prev_button = QPushButton("←")
+                next_button = QPushButton("→")
+                nav_layout.addWidget(prev_button)
+                nav_layout.addWidget(next_button)
+
+                # Timeframe Dropdown
+                timeframe_selector = QComboBox()
+                timeframe_selector.addItems(["Day", "Week", "Month", "Year"])
+                nav_layout.addWidget(timeframe_selector)
+
+                # Add navigation layout
+                file_tab_layout.addLayout(nav_layout)
+
+                # Chart Display
+                chart_view = QChartView()
+                chart_view.setRenderHint(QPainter.RenderHint.Antialiasing)
+                file_tab_layout.addWidget(chart_view)
+
+                # Set up connections
+                prev_button.clicked.connect(partial(self.move_in_time, file, -1, chart_view, timeframe_selector))
+                next_button.clicked.connect(partial(self.move_in_time, file, 1, chart_view, timeframe_selector))
+                timeframe_selector.currentTextChanged.connect(
+                    partial(self.update_chart, file, chart_view, timeframe_selector))
+
+                # Add tab content to scroll area
+                scroll_area.setWidget(file_tab_content)
+                self.tab_widget.addTab(scroll_area, f"Time Stats for {file.name}")
+
+    def move_in_time(self, file, direction, chart_view, timeframe_selector):
+            """
+            Updates the time index and refreshes the chart when navigating.
+            """
+            self.time_index += direction
+            self.update_chart(file, chart_view, timeframe_selector)
+
+    def update_chart(self, file, chart_view, timeframe_selector):
+        """
+        Refreshes the chart to display messages over the selected timeframe.
+        """
         chart = QChart()
-        self.current_timeframe = self.timeframe_selector.currentText()
-        
-        # Placeholder data based on selected timeframe
-        time_units = ["01", "02", "03", "04", "05", "06", "07"]  # Customize with real data
-        
+        current_timeframe = timeframe_selector.currentText()
+
         series = QBarSeries()
-        data_set = QBarSet(self.current_timeframe)
-        
-        # Populate bars with example data; replace with real data
-        if self.current_timeframe == "Day":
-            data_set.append([5, 3, 8, 6, 7, 2, 1])
-        elif self.current_timeframe == "Week":
-            data_set.append([35, 40, 50, 20, 30, 25, 45])
-        elif self.current_timeframe == "Month":
-            data_set.append([100, 120, 80, 150, 90, 110, 130])
-        elif self.current_timeframe == "Year":
-            data_set.append([1200, 1350, 1300, 1400, 1250, 1280, 1380])
-        
+        data_set = QBarSet(file.name)
+        chart.setTitle(f"Messages Over Time ({current_timeframe})")
+        if current_timeframe == "Day":
+            chart.setTitle(f"Messages for {self.last_day:02}/{self.last_month:02}/{self.last_year + 2000}")
+        elif current_timeframe == "Week":
+            chart.setTitle(f"Messages for Week Ending {self.last_day:02}/{self.last_month:02}/{self.last_year + 2000}")
+        elif current_timeframe == "Month":
+            chart.setTitle(f"Messages for {self.last_month:02}/{self.last_year + 2000}")
+        elif current_timeframe == "Year":
+            chart.setTitle(f"Messages for {self.last_year + 2000}")
+
+       
+        if current_timeframe == "Day":
+            data = self.get_timeframe_data(file, "daily", self.time_index)
+            
+            categories = [f"{i}:00" for i in range(len(data))]
+        elif current_timeframe == "Week":
+            data = self.get_timeframe_data(file, "weekly", self.time_index)
+            categories = [f"Day {i+1}" for i in range(len(data))]
+        elif current_timeframe == "Month":
+            data = self.get_timeframe_data(file, "monthly", self.time_index)
+            categories = [f" {i+1}" for i in range(len(data))]
+        elif current_timeframe == "Year":
+            data = self.get_timeframe_data(file, "yearly", self.time_index)
+            categories = [f"{i+1}" for i in range(len(data))]
+
+        data_set.append(data)
         series.append(data_set)
-        
-
-
         chart.addSeries(series)
-        
-        # Create axis and categories
+
+        # Set up axes
         axis_x = QBarCategoryAxis()
-        axis_x.append(time_units)
+        axis_x.append(categories)
         chart.addAxis(axis_x, Qt.AlignmentFlag.AlignBottom)
         series.attachAxis(axis_x)
 
-        chart.setTitle(f"Metrics over Time ({self.current_timeframe})")
-        self.chart_view.setChart(chart)
+        axis_y = QValueAxis()
+        chart.addAxis(axis_y, Qt.AlignmentFlag.AlignLeft)
+        series.attachAxis(axis_y)
 
-    def move_forward(self):
-        # Shift timeframe forward and update chart
-        self.time_index += 1
-        self.update_chart()
+        # Update chart view
+        
+        chart_view.setChart(chart)
 
-    def move_back(self):
-        # Shift timeframe backward and update chart
-        self.time_index = max(0, self.time_index - 1)
-        self.update_chart()       
-        
-        
-        
+    def find_last_message(self,file):
+        file.clean_up_file()
+        self.last_hour = int(file.chat_lines[-1][11:13])
+        self.last_minute = int(file.chat_lines[-1][14:16])
+        self.last_second = int(file.chat_lines[-1][17:19])
+        self.last_day = int(file.chat_lines[-1][1:3])
+        self.last_month = int(file.chat_lines[-1][4:6])
+        self.last_year = int(file.chat_lines[-1][7:9])
+                
 
+
+    def get_timeframe_data(self, file, timeframe, index):
+
+        if timeframe == "daily":
+            list_hours = [0] * 24  
+            for hours in range(24):  
+                for line in file.chat_lines:
+                    
+                        hour = int(line[11:13])
+                        day = int(line[1:3])
+                        month = int(line[4:6])
+                        year = int(line[7:9])
+                        
+                       
+                        if day == self.last_day and month == self.last_month and year == self.last_year and hour == hours:
+                            list_hours[hours] += 1
+            return list_hours
+
+        from datetime import datetime, timedelta
+        if timeframe == "weekly":
+            list_days = [0] * 7  
+            last_date = datetime(self.last_year, self.last_month, self.last_day)
+            start_date = last_date - timedelta(days=6)  
+
+            for line in file.chat_lines:
+                    day = int(line[1:3])
+                    month = int(line[4:6])
+                    year = int(line[7:9])                     
+                    message_date = datetime(year, month, day)                
+                    if start_date <= message_date <= last_date:
+                        weekday_index = message_date.weekday()  
+                        list_days[weekday_index] += 1
+
+            return list_days
+
+
+        elif timeframe == "monthly":
+            list_month = [0] * 31  
+            for line in file.chat_lines:
+                
+                    day = int(line[1:3])
+                    month = int(line[4:6])
+                    year = int(line[7:9])
+                    
+                    # Match with the last month
+                    if year == self.last_year and month == self.last_month:
+                        if 1 <= day <= 31:
+                            list_month[day - 1] += 1 
+            return list_month
+
+        elif timeframe == "yearly":
+            list_months = [0] * 12  
+            for line in file.chat_lines:
+                
+                    month = int(line[4:6])
+                    year = int(line[7:9])
+                    
+                    # Match with the last year
+                    if year == self.last_year:
+                        list_months[month - 1] += 1  
+            return list_months
+
+    def move_in_time(self, file, direction, chart_view, timeframe_selector):
     
+        current_timeframe = timeframe_selector.currentText()
 
-         
+        if current_timeframe == "Day":
+            
+            self.last_day += direction
+            if self.last_day < 1:  
+                self.last_month -= 1
+                if self.last_month < 1:
+                    self.last_month = 12
+                    self.last_year -= 1
+                self.last_day = self.get_days_in_month(self.last_month, self.last_year)
+            elif self.last_day > self.get_days_in_month(self.last_month, self.last_year):  
+                self.last_day = 1
+                self.last_month += 1
+                if self.last_month > 12:
+                    self.last_month = 1
+                    self.last_year += 1
+
+        elif current_timeframe == "Week":
+            
+            self.last_day += 7 * direction
+            while self.last_day < 1:  
+                self.last_month -= 1
+                if self.last_month < 1:
+                    self.last_month = 12
+                    self.last_year -= 1
+                self.last_day += self.get_days_in_month(self.last_month, self.last_year)
+            while self.last_day > self.get_days_in_month(self.last_month, self.last_year): 
+                self.last_day -= self.get_days_in_month(self.last_month, self.last_year)
+                self.last_month += 1
+                if self.last_month > 12:
+                    self.last_month = 1
+                    self.last_year += 1
+
+        elif current_timeframe == "Month":
+            self.last_month += direction
+            if self.last_month < 1:
+                self.last_month = 12
+                self.last_year -= 1
+            elif self.last_month > 12:
+                self.last_month = 1
+                self.last_year += 1
+
+        elif current_timeframe == "Year":
+            self.last_year += direction
+
+        self.update_chart(file, chart_view, timeframe_selector)
+
+
+    def get_days_in_month(self, month, year):
+        """
+        Returns the number of days in a given month and year.
+        """
+        return monthrange(year + 2000, month)[1] 
+
     def change_display_mode(self, item):
         if item:
             mode = item.text()  
@@ -598,7 +757,7 @@ class FileStatisticsGUI(QWidget):
         return text_data
 
     def display_file_statistics(self, text, chat_file, label, chart_layout):
-        # Update the label with the selected option
+        
         label.setText(f"Statistics for {text}")
         
         for i in reversed(range(chart_layout.count())):
@@ -607,13 +766,13 @@ class FileStatisticsGUI(QWidget):
                 widget_to_remove.deleteLater()
                 chart_layout.removeWidget(widget_to_remove)
 
-        # Calculate the total count for the selected statistic
+        
         total_count = sum(int(getattr(person, f"{text}_count", 0) or 0) for person in chat_file.participant_objects)
         if total_count == 0:
             print(f"No data to display for {text}.")
-            return  # No data to show for this option
+            return 
 
-        # Create a new pie chart per item
+        
         series = QPieSeries()
         total=0
         for person in chat_file.participant_objects:
@@ -621,9 +780,9 @@ class FileStatisticsGUI(QWidget):
             print (count)
             total +=count
             print (total)
-            percentage = (count / total_count) * 100  # Calculate percentage
+            percentage = (count / total_count) * 100  
             if count > 0 and percentage > (10 / len(chat_file.participant_objects)):
-                # Append data with formatted label showing absolute value and percentage
+                
                 slice = series.append(f"{person.name}: {count} ({percentage:.1f}%)", count)
                 slice.setLabelVisible(True)
                 
