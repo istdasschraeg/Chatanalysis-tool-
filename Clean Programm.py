@@ -326,6 +326,7 @@ class FileStatisticsGUI(QWidget):
         self.chat_files = object_Chatfile_list
         self.current_timeframe = 'Day'
         self.time_index = 1
+        self.mood = True
 
         self.timeframe_year=0
         self.timeframe_month=0
@@ -527,17 +528,25 @@ class FileStatisticsGUI(QWidget):
                 timeframe_selector.addItems(["Day", "Week", "Month", "Year"])
                 nav_layout.addWidget(timeframe_selector)
 
+                mode_selector = QComboBox()
+                mode_selector.addItems(["Number", "Mood"])
+                nav_layout.addWidget(mode_selector)
+
+
                 # Add navigation layout
                 file_tab_layout.addLayout(nav_layout)
 
                 # Chart Display
                 chart_view = QChartView()
-                chart_view.setRenderHint(QPainter.RenderHint.Antialiasing)
+                chart_view.setRenderHint(QPainter.RenderHint.Antialiasing)   
                 file_tab_layout.addWidget(chart_view)
 
                 # Set up connections
                 prev_button.clicked.connect(partial(self.move_in_time, file, -1, chart_view, timeframe_selector))
                 next_button.clicked.connect(partial(self.move_in_time, file, 1, chart_view, timeframe_selector))
+                timeframe_selector.currentTextChanged.connect(
+                    partial(self.update_chart, file, chart_view, timeframe_selector))
+
                 timeframe_selector.currentTextChanged.connect(
                     partial(self.update_chart, file, chart_view, timeframe_selector))
 
@@ -554,37 +563,31 @@ class FileStatisticsGUI(QWidget):
 
     def update_chart(self, file, chart_view, timeframe_selector):
         """
-        Refreshes the chart to display messages over the selected timeframe.
+        Refreshes the chart to display messages or mood over the selected timeframe.
         """
         chart = QChart()
         current_timeframe = timeframe_selector.currentText()
+        current_mode = self.mood  # True for "Mood", False for "Number"
 
         series = QBarSeries()
         data_set = QBarSet(file.name)
-        chart.setTitle(f"Messages Over Time ({current_timeframe})")
-        if current_timeframe == "Day":
-            chart.setTitle(f"Messages for {self.last_day:02}/{self.last_month:02}/{self.last_year + 2000}")
-        elif current_timeframe == "Week":
-            chart.setTitle(f"Messages for Week Ending {self.last_day:02}/{self.last_month:02}/{self.last_year + 2000}")
-        elif current_timeframe == "Month":
-            chart.setTitle(f"Messages for {self.last_month:02}/{self.last_year + 2000}")
-        elif current_timeframe == "Year":
-            chart.setTitle(f"Messages for {self.last_year + 2000}")
+        chart.setTitle(f"{'Mood' if current_mode else 'Messages'} Over Time ({current_timeframe})")
 
-       
         if current_timeframe == "Day":
-            data = self.get_timeframe_data(file, "daily", self.time_index)
-            
-            categories = [f"{i}:00" for i in range(len(data))]
+            chart.setTitle(f"{'Mood' if current_mode else 'Messages'} for {self.last_day:02}/{self.last_month:02}/{self.last_year + 2000}")
         elif current_timeframe == "Week":
-            data = self.get_timeframe_data(file, "weekly", self.time_index)
-            categories = [f"Day {i+1}" for i in range(len(data))]
+            chart.setTitle(f"{'Mood' if current_mode else 'Messages'} for Week Ending {self.last_day:02}/{self.last_month:02}/{self.last_year + 2000}")
         elif current_timeframe == "Month":
-            data = self.get_timeframe_data(file, "monthly", self.time_index)
-            categories = [f" {i+1}" for i in range(len(data))]
+            chart.setTitle(f"{'Mood' if current_mode else 'Messages'} for {self.last_month:02}/{self.last_year + 2000}")
         elif current_timeframe == "Year":
-            data = self.get_timeframe_data(file, "yearly", self.time_index)
-            categories = [f"{i+1}" for i in range(len(data))]
+            chart.setTitle(f"{'Mood' if current_mode else 'Messages'} for {self.last_year + 2000}")
+
+        # Fetch data based on timeframe and mode
+        timeframe = current_timeframe.lower()
+        data = self.get_timeframe_data(file, timeframe, current_mode)
+        categories = [f"{i}:00" for i in range(len(data))] if timeframe == "daily" else \
+                    [f"Day {i+1}" for i in range(len(data))] if timeframe == "weekly" else \
+                    [f"{i+1}" for i in range(len(data))]
 
         data_set.append(data)
         series.append(data_set)
@@ -600,12 +603,9 @@ class FileStatisticsGUI(QWidget):
         chart.addAxis(axis_y, Qt.AlignmentFlag.AlignLeft)
         series.attachAxis(axis_y)
 
-        # Update chart view
-        
         chart_view.setChart(chart)
 
     def find_last_message(self,file):
-        file.clean_up_file()
         self.last_hour = int(file.chat_lines[-1][11:13])
         self.last_minute = int(file.chat_lines[-1][14:16])
         self.last_second = int(file.chat_lines[-1][17:19])
@@ -613,12 +613,19 @@ class FileStatisticsGUI(QWidget):
         self.last_month = int(file.chat_lines[-1][4:6])
         self.last_year = int(file.chat_lines[-1][7:9])
                 
+    def toggle_mode(self, mode, chart_view, file, timeframe_selector):
+        """
+        Toggles the display mode between 'Number' and 'Mood'.
+        """
+        self.mood = (mode == "Mood")
+        self.update_chart(file, chart_view, timeframe_selector)
 
+    def get_timeframe_data(self, file, timeframe):
 
-    def get_timeframe_data(self, file, timeframe, index):
-
+        self.mood ==True 
         if timeframe == "daily":
             list_hours = [0] * 24  
+            list_hours_text= [""]*24
             for hours in range(24):  
                 for line in file.chat_lines:
                     
@@ -627,9 +634,21 @@ class FileStatisticsGUI(QWidget):
                         month = int(line[4:6])
                         year = int(line[7:9])
                         
-                       
                         if day == self.last_day and month == self.last_month and year == self.last_year and hour == hours:
-                            list_hours[hours] += 1
+                            if self.mood == False:
+                                list_hours[hours] += 1
+                            else:
+                                list_hours_text[hours]+= line 
+                                print("lol")
+                        
+                if self.mood == True:
+                    print (list_hours_text[hours])
+                    scores= sid.polarity_scores(list_hours_text[hours])
+                    compound_score = scores['compound']
+                    print (compound_score)
+                    list_hours[hours]+= int(compound_score*100)
+
+
             return list_hours
 
         from datetime import datetime, timedelta
@@ -675,6 +694,7 @@ class FileStatisticsGUI(QWidget):
                     if year == self.last_year:
                         list_months[month - 1] += 1  
             return list_months
+    
 
     def move_in_time(self, file, direction, chart_view, timeframe_selector):
     

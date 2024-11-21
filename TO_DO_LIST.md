@@ -6,8 +6,8 @@
 
 - [ ] Sentiment Analyses
 - [ ] emotions detection?
-- [ ] Time of Day patters
-- [ ] Month Year inlfux of texts
+- [x] Time of Day patters
+- [x] Month Year inlfux of texts
 - [ ] Message Batch recognition
 - [ ] Instagramm extension
 - [ ]  Responds time Analyses (with certain modifable thresholds)
