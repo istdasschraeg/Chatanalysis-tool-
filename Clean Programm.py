@@ -29,10 +29,8 @@ sid = SentimentIntensityAnalyzer()
 # Global variables
 timestamp_pattern = r"\[\d{2}\.\d{2}\.\d{2}, \d{2}:\d{2}:\d{2}\]"
 enable_interface = False
-excluded_names = ["\u200eYou", "DummeLeuteDieSchachSpiele","Gossip Girls", "Gott Der Fucking Welt"]
-file_list=["DummeLeuteDieSchachSpielen.txt","Nyla.txt","Moritz.txt","Gossip.txt","Ada.txt","Ada2.txt","Carl Erhardt.txt","Caro.txt","Chat 2024.txt","Christina.txt","Christina2.txt",
-           "Cosima.txt","Daniela.txt","Daniela2.txt", "Elise HeHe.txt", "Emilia.txt","Emma.txt", "Enz.txt","Fahrradtour.txt","Fiona.txt","Herren.txt","Jule.txt","Juliane.txt",
-           "Julius.txt","Liam.txt","Lukas.txt","Mama.txt","Manu.txt","Marcus.txt","Mihn.txt","Mitchel.txt","Q3-Q4.txt","Renate.txt","Sergio.txt","Tay.txt"]
+excluded_names = []
+file_list=[] #Here ur files
 object_Chatfile_list =[]
 
 if enable_interface:
