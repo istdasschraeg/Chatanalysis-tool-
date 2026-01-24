@@ -1,5 +1,4 @@
 
-
 # TO DO LIST:
 
 - [x] exclude names
@@ -7,10 +6,13 @@
 - [ ] Sentiment Analyses
 - [ ] emotions detection?
 - [ ] Time of Day patters
+- [ ]Topic Analyser
+- [ ]personilsed language
+
 - [ ] Month Year inlfux of texts
 - [ ] Message Batch recognition
 - [ ] Instagramm extension
-- [ ]  Responds time Analyses (with certain modifable thresholds)
+- [ ] Responds time Analyses (with certain modifable thresholds)
 
 - [ ] GUI with possiblity of 
     identifying doubles in group chats
@@ -23,7 +25,4 @@ Topic Analyser
 personilsed language
 Politness meter
 
-sort stats 
-     
-     
-
+sort stats
