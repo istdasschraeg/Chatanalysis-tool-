@@ -34,7 +34,7 @@ ALIGN_LEFT = 0x1
 # Global variables
 timestamp_pattern = r"\[\d{2}\.\d{2}\.\d{2}, \d{2}:\d{2}:\d{2}\]"
 enable_interface = False
-excluded_names = ["\u200eYou", "DummeLeuteDieSchachSpiele","Gossip Girls", "Gott Der Fucking Welt"]
+excluded_names = ["\u200eYou","Ihmen.txt", "DummeLeuteDieSchachSpiele","Gossip Girls", "Gott Der Fucking Welt"]
 file_list=["DummeLeuteDieSchachSpielen.txt","MONMON.txt","Nyla.txt","Moritz.txt","Gossip.txt","Tay.txt","Madlen.txt","Ada.txt",
            "Ada2.txt","Carl Erhardt.txt","Caro.txt","Chat 2024.txt","Christina.txt","Christina2.txt",
            "Cosima.txt","Daniela.txt","Daniela2.txt", "Elise HeHe.txt", "Emilia.txt","Emma.txt", 
@@ -611,6 +611,11 @@ class FileStatisticsGUI(QWidget):
                 timeframe_selector.addItems(["Day", "Week", "Month", "Year"])
                 nav_layout.addWidget(timeframe_selector)
 
+                # Data Type Dropdown
+                data_type_selector = QComboBox()
+                data_type_selector.addItems(["Message Count", "Sentiment Score"])
+                nav_layout.addWidget(data_type_selector)
+
                 # Add navigation layout
                 file_tab_layout.addLayout(nav_layout)
 
@@ -620,10 +625,12 @@ class FileStatisticsGUI(QWidget):
                 file_tab_layout.addWidget(chart_view)
 
                 # Set up connections
-                prev_button.clicked.connect(partial(self.move_in_time, file, -1, chart_view, timeframe_selector))
-                next_button.clicked.connect(partial(self.move_in_time, file, 1, chart_view, timeframe_selector))
+                prev_button.clicked.connect(partial(self.move_in_time, file, -1, chart_view, timeframe_selector, data_type_selector))
+                next_button.clicked.connect(partial(self.move_in_time, file, 1, chart_view, timeframe_selector, data_type_selector))
                 timeframe_selector.currentTextChanged.connect(
-                    partial(self.update_chart, file, chart_view, timeframe_selector))
+                    partial(self.update_chart, file, chart_view, timeframe_selector, data_type_selector))
+                data_type_selector.currentTextChanged.connect(
+                    partial(self.update_chart, file, chart_view, timeframe_selector, data_type_selector))
 
                 # Add tab content to scroll area
                 scroll_area.setWidget(file_tab_content)
@@ -732,38 +739,50 @@ class FileStatisticsGUI(QWidget):
             self.time_index += direction
             self.update_chart(file, chart_view, timeframe_selector)
 
-    def update_chart(self, file, chart_view, timeframe_selector):
+    def update_chart(self, file, chart_view, timeframe_selector, data_type_selector):
         """
         Refreshes the chart to display messages over the selected timeframe.
         """
         chart = QChart()
         current_timeframe = timeframe_selector.currentText()
+        current_data_type = data_type_selector.currentText()
 
         series = QBarSeries()
         data_set = QBarSet(file.name)
-        chart.setTitle(f"Messages Over Time ({current_timeframe})")
+        chart.setTitle(f"{current_data_type} Over Time ({current_timeframe})")
         if current_timeframe == "Day":
-            chart.setTitle(f"Messages for {self.last_day:02}/{self.last_month:02}/{self.last_year + 2000}")
+            chart.setTitle(f"{current_data_type} for {self.last_day:02}/{self.last_month:02}/{self.last_year + 2000}")
         elif current_timeframe == "Week":
-            chart.setTitle(f"Messages for Week Ending {self.last_day:02}/{self.last_month:02}/{self.last_year + 2000}")
+            chart.setTitle(f"{current_data_type} for Week Ending {self.last_day:02}/{self.last_month:02}/{self.last_year + 2000}")
         elif current_timeframe == "Month":
-            chart.setTitle(f"Messages for {self.last_month:02}/{self.last_year + 2000}")
+            chart.setTitle(f"{current_data_type} for {self.last_month:02}/{self.last_year + 2000}")
         elif current_timeframe == "Year":
-            chart.setTitle(f"Messages for {self.last_year + 2000}")
+            chart.setTitle(f"{current_data_type} for {self.last_year + 2000}")
 
        
         if current_timeframe == "Day":
-            data = self.get_timeframe_data(file, "daily", self.time_index)
-            
+            if current_data_type == "Message Count":
+                data = self.get_timeframe_data(file, "daily", self.time_index)
+            else:
+                data = self.get_sentiment_data(file, "daily", self.time_index)
             categories = [f"{i}:00" for i in range(len(data))]
         elif current_timeframe == "Week":
-            data = self.get_timeframe_data(file, "weekly", self.time_index)
+            if current_data_type == "Message Count":
+                data = self.get_timeframe_data(file, "weekly", self.time_index)
+            else:
+                data = self.get_sentiment_data(file, "weekly", self.time_index)
             categories = [f"Day {i+1}" for i in range(len(data))]
         elif current_timeframe == "Month":
-            data = self.get_timeframe_data(file, "monthly", self.time_index)
+            if current_data_type == "Message Count":
+                data = self.get_timeframe_data(file, "monthly", self.time_index)
+            else:
+                data = self.get_sentiment_data(file, "monthly", self.time_index)
             categories = [f" {i+1}" for i in range(len(data))]
         elif current_timeframe == "Year":
-            data = self.get_timeframe_data(file, "yearly", self.time_index)
+            if current_data_type == "Message Count":
+                data = self.get_timeframe_data(file, "yearly", self.time_index)
+            else:
+                data = self.get_sentiment_data(file, "yearly", self.time_index)
             categories = [f"{i+1}" for i in range(len(data))]
 
         data_set.append(data)
@@ -777,12 +796,52 @@ class FileStatisticsGUI(QWidget):
         series.attachAxis(axis_x)
 
         axis_y = QValueAxis()
+        if current_data_type == "Sentiment Score":
+            axis_y.setTitleText("Sentiment Score")
+        else:
+            axis_y.setTitleText("Message Count")
         chart.addAxis(axis_y, Qt.AlignmentFlag.AlignLeft)
         series.attachAxis(axis_y)
 
         # Update chart view
         
         chart_view.setChart(chart)
+
+    def get_timeframe_data(self, file, timeframe, time_index):
+        # Placeholder implementation
+        if timeframe == "daily":
+            year = self.last_year + 2000
+            month = self.last_month
+            day = self.last_day
+            return file.count_messages_per_timeframe.get(year, {}).get(month, {}).get(day, [0] * 24)
+        # Add other timeframes as needed
+        return []
+
+    def get_sentiment_data(self, file, timeframe, time_index):
+        if timeframe == "daily":
+            year = self.last_year + 2000
+            month = self.last_month
+            day = self.last_day
+            hourly_sentiments = [[] for _ in range(24)]
+            for hour in range(24):
+                messages = file.text_messages_per_timeframe.get(year, {}).get(month, {}).get(day, {}).get(hour, "")
+                if messages:
+                    # Split messages and compute sentiment
+                    msg_list = messages.split('\n')
+                    for msg in msg_list:
+                        if msg.strip():
+                            scores = sid.polarity_scores(msg)
+                            hourly_sentiments[hour].append(scores['compound'])
+            # Compute average per hour
+            data = []
+            for hour in range(24):
+                if hourly_sentiments[hour]:
+                    avg = sum(hourly_sentiments[hour]) / len(hourly_sentiments[hour])
+                    data.append(avg)
+                else:
+                    data.append(0)
+            return data
+        return []
 
     def find_last_message(self,file):
         file.clean_up_file()
@@ -846,7 +905,7 @@ class FileStatisticsGUI(QWidget):
                         list_months[month - 1] += 1  
             return list_months
 
-    def move_in_time(self, file, direction, chart_view, timeframe_selector):
+    def move_in_time(self, file, direction, chart_view, timeframe_selector, data_type_selector):
     
         current_timeframe = timeframe_selector.currentText()
 
@@ -894,7 +953,7 @@ class FileStatisticsGUI(QWidget):
         elif current_timeframe == "Year":
             self.last_year += direction
 
-        self.update_chart(file, chart_view, timeframe_selector)
+        self.update_chart(file, chart_view, timeframe_selector, data_type_selector)
 
 
     def get_days_in_month(self, month, year):
